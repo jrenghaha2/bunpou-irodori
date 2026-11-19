@@ -1,0 +1,977 @@
+================================================================================
+DAFTAR LENGKAP BUNPOU BUKU IRODORI: JAPANESE FOR LIFE IN JAPAN
+(Introductory / Nyuumon - Elementary 1 / Shokyuu 1 - Elementary 2 / Shokyuu 2)
+================================================================================
+
+KETERANGAN SINGKATAN RUMUS:
+- N         : Kata Benda (Meishi)
+- V         : Kata Kerja (Doushi)
+- V(akar)   : Kata kerja bentuk ます tanpa ます (contoh: たべます -> たべ)
+- V-る      : Kata kerja bentuk kamus (Jishokei)
+- V-ない    : Kata kerja bentuk negatif biasa (Naikei)
+- V-た      : Kata kerja bentuk lampau biasa (Takei)
+- V-て      : Kata kerja bentuk て (Tekei)
+- V-ば      : Kata kerja bentuk syarat (Bakei)
+- V-意向    : Kata kerja bentuk maksud/ajakan biasa (Ikoukei)
+- V-可能    : Kata kerja bentuk potensial / bisa (Kanoukei)
+- V-受身    : Kata kerja bentuk pasif (Ukemikei)
+- V-使役    : Kata kerja bentuk kausatif (Shiekikei)
+- V-命令    : Kata kerja bentuk perintah (Meireikei)
+- い-Adj    : Kata Sifat berakhiran い (contoh: おおきい)
+- な-Adj    : Kata Sifat berakhiran な (contoh: きれい[な])
+- F.Biasa   : Bentuk Biasa / Kasual (Futsuukei: V-る/V-ない/V-た, い-Adj, な-Adj+だ, N+だ)
+
+================================================================================
+BAGIAN 1: IRODORI INTRODUCTORY (入門 / NYUUMON - LEVEL A1)
+================================================================================
+
+--- BAB 1: にほんご (Bahasa Jepang) ---
+Catatan: Bab ini berfokus pada ungkapan salam dan frasa interaksi dasar di kelas
+(belum masuk ke rumus konjugasi tata bahasa formal).
+- Frasa Kunci:
+  * [N] を おねがいします (Tolong berikan/lakukan [N])
+  * もう いちど おねがいします (Tolong ulangi sekali lagi)
+
+--- BAB 2: どうぞよろしく (Salam Kenal) ---
+1. Kalimat Nominal Positif & Negatif
+   - Rumus  : N1 + は + N2 + です (Positif)
+              N1 + は + N2 + じゃありません / ではありません (Negatif)
+   - Fungsi : Menyatakan identitas, nama, pekerjaan, atau kebangsaan.
+   - Contoh : わたしは エンジニア です。(Saya adalah insinyur.)
+
+2. Kalimat Tanya
+   - Rumus  : Kalimat + か
+   - Fungsi : Mengubah kalimat pernyataan menjadi pertanyaan.
+   - Contoh : がくせい ですか。(Apakah Anda pelajar?)
+
+3. Kepemilikan / Afiliasi Kata Benda
+   - Rumus  : N1 + の + N2
+   - Fungsi : Menyatakan N2 milik/bagian dari N1.
+   - Contoh : わたしの くるま (Mobil milik saya)
+
+4. Partikel "Juga"
+   - Rumus  : N + も
+   - Fungsi : Menyatakan kesamaan predikat dengan topik sebelumnya (menggantikan は).
+   - Contoh : わたしも インドネシアじん です。(Saya juga orang Indonesia.)
+
+--- BAB 3: とうきょうにすんでいます (Tinggal di Tokyo) ---
+1. Menyatakan Tempat Tinggal
+   - Rumus  : [Nama Tempat] + に + すんでいます
+   - Fungsi : Menyatakan lokasi domisili saat ini.
+   - Contoh : とうきょうに すんでいます。(Saya tinggal di Tokyo.)
+
+2. Menyatakan Asal Negara / Daerah
+   - Rumus  : [Nama Tempat] + から + きました
+   - Fungsi : Menyatakan tempat asal kedatangan.
+   - Contoh : ジャカルタから きました。(Saya datang dari Jakarta.)
+
+3. Kata Hubung "Dan" untuk Kata Benda
+   - Rumus  : N1 + と + N2
+   - Fungsi : Menghubungkan dua kata benda secara setara.
+   - Contoh : かぞくと ともだち (Keluarga dan teman)
+
+4. Partikel Akhir Konfirmasi
+   - Rumus  : Kalimat + ね
+   - Fungsi : Meminta persetujuan atau menunjukkan empati/konfirmasi kepada lawan bicara.
+   - Contoh : さむい ですね。(Dingin ya.)
+
+--- BAB 4: なんじにおきますか (Bangun Jam Berapa?) ---
+1. Waktu Spesifik Melakukan Kegiatan
+   - Rumus  : [Waktu Angka] + に + V
+   - Fungsi : Menunjukkan titik waktu terjadinya aktivitas.
+   - Contoh : 7じに おきます。(Bangun pada pukul 7.)
+
+2. Rentang Waktu / Tempat
+   - Rumus  : [Waktu/Tempat 1] + から + [Waktu/Tempat 2] + まで
+   - Fungsi : Menyatakan titik awal (dari) hingga titik akhir (sampai).
+   - Contoh : 9じから 5じまで はたらきます。(Bekerja dari jam 9 sampai jam 5.)
+
+3. Konjugasi Dasar Kata Kerja Sopan (Bentuk ます)
+   - Rumus  : V(akar) + ます (Non-lampau positif: akan/rutin)
+              V(akar) + ません (Non-lampau negatif: tidak)
+              V(akar) + ました (Lampau positif: sudah)
+              V(akar) + ませんでした (Lampau negatif: tidak/belum di masa lalu)
+   - Contoh : きのう べんきょうしました。(Kemarin belajar.)
+
+--- BAB 5: しゅみはなんですか (Apa Hobimu?) ---
+1. Penanda Objek Langsung
+   - Rumus  : N + を + V(transitif)
+   - Fungsi : Menandai kata benda yang dikenai tindakan kata kerja.
+   - Contoh : ほんを よみます。(Membaca buku.)
+
+2. Kesukaan, Keahlian, dan Kelemahan
+   - Rumus  : N + が + すきです / とくいです / にがてです
+   - Fungsi : Menyatakan hal yang disukai, dikuasai, atau tidak dikuasai.
+   - Contoh : りょうりが とくいです。(Pandai memasak.)
+
+3. Nominalisasi Kata Kerja (Hobi / Kegiatan)
+   - Rumus  : V-る + こと
+   - Fungsi : Mengubah kata kerja menjadi frasa kata benda ("hal melakukan V").
+   - Contoh : しゅみは えいがを みる ことです。(Hobi saya adalah menonton film.)
+
+4. Kata Keterangan Frekuensi
+   - Rumus  : よく / ときどき + V-ます (Sering / Kadang-kadang)
+              あまり / ぜんぜん + V-ません (Jarang / Sama sekali tidak)
+   - Contoh : あまり テレビを みません。(Jarang menonton TV.)
+
+--- BAB 6: いっしょにいきませんか (Mau Pergi Bersama?) ---
+1. Arah atau Tujuan Perpindahan
+   - Rumus  : [Tempat] + へ / に + いきます / きます / かえります
+   - Fungsi : Menunjukkan tujuan pergerakan (pergi, datang, pulang).
+   - Contoh : スーパーへ いきます。(Pergi ke supermarket.)
+
+2. Ajakan Sopan
+   - Rumus  : V(akar) + ませんか
+   - Fungsi : Mengajak lawan bicara melakukan sesuatu dengan sopan ("Maukah...?").
+   - Contoh : いっしょに ひるごはんを たべませんか。(Maukah makan siang bersama?)
+
+3. Ajakan Langsung / Menyetujui Ajakan
+   - Rumus  : V(akar) + ましょう
+   - Fungsi : Mengajak ("Mari...") atau merespons ajakan dengan antusias.
+   - Contoh : いいですね。いきましょう。(Bagus tuh. Ayo pergi.)
+
+4. Penyangkalan Total dengan Kata Tanya
+   - Rumus  : どこへも / なにも / だれとも + V-ません
+   - Fungsi : Menyatakan "tidak ke mana pun / tidak apa pun / tidak dengan siapa pun".
+   - Contoh : どこへも いきません。(Tidak pergi ke mana pun.)
+
+--- BAB 7: どこにありますか (Ada di Mana?) ---
+1. Keberadaan Benda & Makhluk Hidup
+   - Rumus  : [Tempat] + に + N(benda mati) + が + あります
+              [Tempat] + に + N(makhluk hidup) + が + います
+   - Fungsi : Menyatakan keberadaan sesuatu di suatu tempat.
+   - Contoh : へやに いぬが います。(Di kamar ada anjing.)
+
+2. Menjelaskan Lokasi Topik Utama
+   - Rumus  : N + は + [Tempat] + に + あります / います
+   - Fungsi : Menjawab pertanyaan di mana letak N berada.
+   - Contoh : トイレは 2かいに あります。(Toilet ada di lantai 2.)
+
+3. Posisi Relatif Benda
+   - Rumus  : N + の + うえ / した / まえ / うしろ / なか / となり / ちかく
+   - Fungsi : Menjelaskan posisi spesifik (atas, bawah, depan, belakang, dalam, sebelah, dekat).
+   - Contoh : つくえの うえに ほんが あります。(Di atas meja ada buku.)
+
+4. Menyebutkan Contoh Tidak Lengkap
+   - Rumus  : N1 + や + N2 + (など)
+   - Fungsi : Menyebutkan beberapa contoh perwakilan ("N1, N2, dan lain-lain").
+   - Contoh : パンや たまごなどを かいました。(Membeli roti, telur, dll.)
+
+--- BAB 8: いくらですか (Berapa Harganya?) ---
+1. Kata Tunjuk Benda (Mandiri)
+   - Rumus  : これ / それ / あれ / どれ + は + ...
+   - Fungsi : Menunjuk benda (ini, itu, itu jauh, yang mana) tanpa diikuti kata benda.
+   - Contoh : これは いくら ですか。(Ini harganya berapa?)
+
+2. Kata Tunjuk Penjelas Kata Benda
+   - Rumus  : この / その / あの / どの + N
+   - Fungsi : Menunjuk benda spesifik yang langsung diikuti kata bendanya.
+   - Contoh : この かばんを ください。(Tolong berikan tas ini.)
+
+3. Meminta atau Membeli Barang
+   - Rumus  : N + を + ください
+   - Fungsi : Meminta suatu benda saat berbelanja atau memesan.
+   - Contoh : みずを ください。(Tolong berikan air.)
+
+4. Kata Bantu Bilangan Dasar
+   - Rumus  : N + を + [Angka + Satuan] + ください
+   - Satuan : 〜つ (benda umum 1-9), 〜まい (benda tipis), 〜ほん (benda panjang), 〜こ (benda kecil).
+   - Contoh : りんごを みっつ ください。(Tolong berikan 3 buah apel.)
+
+--- BAB 9: やすみのひはなにをしましたか (Apa yang Dilakukan Saat Libur?) ---
+1. Tempat Terjadinya Aktivitas
+   - Rumus  : [Tempat] + で + V-ます
+   - Fungsi : Menandai lokasi berlangsungnya suatu aksi/kegiatan.
+   - Contoh : レストランで たべました。(Makan di restoran.)
+
+2. Konjugasi Kata Sifat-i (い-Adj)
+   - Rumus  : [Akar] + いです (Non-lampau positif)
+              [Akar] + くないです / くありません (Non-lampau negatif)
+              [Akar] + かったです (Lampau positif)
+              [Akar] + くなかったです / くありませんでした (Lampau negatif)
+   - Catatan: いい (bagus) berubah menjadi よくない / よかった / よくなかった.
+   - Contoh : きのうは あつかったです。(Kemarin panas.)
+
+3. Konjugasi Kata Sifat-na (な-Adj)
+   - Rumus  : [Akar] + です (Non-lampau positif)
+              [Akar] + じゃありません / ではありません (Non-lampau negatif)
+              [Akar] + でした (Lampau positif)
+              [Akar] + じゃありませんでした (Lampau negatif)
+   - Contoh : まちは しずかでした。(Kotanya tenang.)
+
+--- BAB 10: にほんごがじょうずですね (Bahasa Jepangmu Pandai Ya) ---
+1. Menyatakan Kemampuan
+   - Rumus  : N + が + できます
+              V-る + ことが + できます
+   - Fungsi : Menyatakan kemampuan melakukan suatu hal atau aktivitas.
+   - Contoh : かんじを よむ ことが できます。(Bisa membaca huruf Kanji.)
+
+2. Sarana, Alat, atau Bahasa
+   - Rumus  : [Alat / Bahasa] + で + V
+   - Fungsi : Menunjukkan alat atau bahasa yang digunakan untuk melakukan sesuatu.
+   - Contoh : にほんごで はなします。(Berbicara dengan bahasa Jepang.)
+
+3. Menanyakan Durasi Waktu
+   - Rumus  : [Tempat1] から [Tempat2] まで + どのくらい かかりますか
+   - Fungsi : Menanyakan berapa lama waktu yang dibutuhkan.
+   - Contoh : うちから かいしゃまで どのくらい かかりますか。(Dari rumah ke kantor makan waktu berapa lama?)
+
+--- BAB 11: なにをのんでいますか (Sedang Minum Apa?) ---
+1. Aksi yang Sedang Berlangsung
+   - Rumus  : V-て + います
+   - Fungsi : Menyatakan kegiatan yang sedang dilakukan saat ini.
+   - Contoh : いま コーヒーを のんでいます。(Sekarang sedang minum kopi.)
+
+2. Menyatakan "Sudah" dan "Belum"
+   - Rumus  : もう + V-ました (Sudah melakukan V)
+              まだ + V-ていません (Belum melakukan V)
+   - Contoh : もう ひるごはんを たべましたか。―いいえ、まだ たべていません。
+
+3. Satuan Hitung Orang & Hidangan
+   - Satuan : 〜にん (orang: ひとり, ふたり, さんにん...), 〜はい (gelas/cangkir), 〜さら (piring).
+   - Contoh : コーヒーを にはい おねがいします。(Tolong 2 cangkir kopi.)
+
+--- BAB 12: もうすぐおまつりですね (Sebentar Lagi Festival Ya) ---
+1. Waktu Penyelenggaraan Acara
+   - Rumus  : [Waktu] + に + [Acara] + が + あります
+   - Fungsi : Menyatakan kapan suatu acara/event diadakan (menggunakan あります).
+   - Contoh : らいしゅう おまつりが あります。(Minggu depan ada festival.)
+
+2. Bahan Baku Pembuatan
+   - Rumus  : [Bahan] + で + つくります
+   - Fungsi : Menyatakan bahan dasar untuk membuat sesuatu.
+   - Contoh : こめで つくります。(Dibuat dari beras.)
+
+3. Menyebut Nama / Istilah
+   - Rumus  : [Nama/Istilah] + と + いいます
+   - Fungsi : Menjelaskan nama atau sebutan dari suatu benda/makanan.
+   - Contoh : これは ナシゴレンと いいます。(Ini disebut Nasi Goreng.)
+
+--- BAB 13: どうやっていきますか (Pergi Naik Apa?) ---
+1. Sarana Transportasi
+   - Rumus  : [Kendaraan] + で + いきます / きます / かえります
+   - Catatan: Jika berjalan kaki, gunakan あるいて (tanpa で).
+   - Contoh : でんしゃで いきます。(Pergi naik kereta.)
+
+2. Rute dari Titik Awal ke Tujuan
+   - Rumus  : [Tempat1] + から + [Tempat2] + まで
+   - Fungsi : Menjelaskan rute perjalanan.
+   - Contoh : とうきょうから おおさかまで しんかんせんで いきます。
+
+3. Transit / Ganti Kendaraan
+   - Rumus  : [Tempat/Stasiun] + で + のりかえます
+   - Fungsi : Menjelaskan tempat berganti moda transportasi.
+   - Contoh : しんじゅくで のりかえます。(Transit di Shinjuku.)
+
+4. Turun dari Kendaraan / Keluar Tempat
+   - Rumus  : [Kendaraan/Tempat] + を + おります / でます
+   - Fungsi : Menggunakan partikel を untuk titik turun atau keluar.
+   - Contoh : バスを おります。(Turun dari bus.)
+
+--- BAB 14: まちのなか (Di Dalam Kota) ---
+1. Kata Sifat Menerangkan Kata Benda
+   - Rumus  : い-Adj + N
+              な-Adj + な + N
+   - Contoh : おおきい こうえん (Taman yang besar) / きれいな まち (Kota yang indah)
+
+2. Kalimat Perbandingan (Lebih ~ daripada ~)
+   - Rumus  : N1 + は + N2 + より + Adj + です
+   - Fungsi : Membandingkan sifat N1 lebih unggul/tinggi daripada N2.
+   - Contoh : とうきょうは ジャカルタより さむいです。(Tokyo lebih dingin daripada Jakarta.)
+
+3. Membandingkan Dua Pilihan
+   - Rumus  : N1 + と + N2 + と + どちらが + Adj + ですか
+   - Jawab  : N1/N2 + の ほうが + Adj + です
+   - Contoh : バスと でんしゃと どちらが はやいですか。(Bus dan kereta mana yang lebih cepat?)
+
+4. Bentuk Paling / Superlatif
+   - Rumus  : [Lingkup N] + のなかで + なに/どこ/だれ/いつ + が + いちばん + Adj + ですか
+   - Contoh : にほんりょうりの なかで なにが いちばん おいしいですか。
+
+--- BAB 15: なにをたべたいですか (Ingin Makan Apa?) ---
+1. Keinginan Melakukan Aktivitas
+   - Rumus  : V(akar) + たいです (Ingin melakukan V)
+              V(akar) + たくないです (Tidak ingin melakukan V)
+   - Contoh : すしを たべたいです。(Ingin makan sushi.)
+
+2. Keinginan Memiliki Benda
+   - Rumus  : N + が + ほしいです / ほしくないです
+   - Fungsi : Menyatakan keinginan memiliki suatu benda.
+   - Contoh : あたらしい スマホが ほしいです。(Ingin smartphone baru.)
+
+3. Menawarkan Bantuan
+   - Rumus  : V(akar) + ましょうか
+   - Fungsi : Menawarkan jasa/bantuan kepada lawan bicara ("Mau saya bantu ~?").
+   - Contoh : にもつを もちましょうか。(Mau saya bawakan barangnya?)
+
+--- BAB 16: おねがいします (Tolong Ya) ---
+1. Permintaan atau Instruksi Sopan
+   - Rumus  : V-て + ください
+   - Fungsi : Meminta lawan bicara melakukan suatu tindakan.
+   - Contoh : ここに なまえを かいて ください。(Tolong tulis nama di sini.)
+
+2. Menghubungkan Beberapa Aksi Berurutan
+   - Rumus  : V1-て、V2-て、V3-ます
+   - Fungsi : Menjelaskan urutan kegiatan secara kronologis.
+   - Contoh : あさ おきて、シャワーを あびて、あさごはんを たべます。
+
+3. Titik Akhir Penempatan Benda
+   - Rumus  : N1 + を + [Tempat] + に + いれます / おきます
+   - Fungsi : Partikel に menandai lokasi akhir benda diletakkan/dimasukkan.
+   - Contoh : ゴミを ゴミばこに いれます。(Memasukkan sampah ke tempat sampah.)
+
+--- BAB 17: どうしましたか (Ada Apa / Kenapa?) ---
+1. Menyatakan Bagian Tubuh yang Sakit
+   - Rumus  : [Bagian Tubuh] + が + いたいです
+   - Contoh : あたまが いたいです。(Kepala saya sakit.)
+
+2. Larangan Halus
+   - Rumus  : V-ない + で + ください
+   - Fungsi : Meminta lawan bicara agar tidak melakukan sesuatu.
+   - Contoh : ここで しゃしんを とらないで ください。(Tolong jangan mengambil foto di sini.)
+
+3. Menyatakan Alasan / Sebab
+   - Rumus  : [Kalimat Alasan] + から、[Kalimat Akibat]
+   - Fungsi : Menjelaskan sebab terjadinya sesuatu ("Karena ~").
+   - Contoh : あたまが いたいですから、きょうは やすみます。
+
+--- BAB 18: とてもたのしかったです (Sangat Menyenangkan) ---
+1. Menyatakan Niat atau Rencana
+   - Rumus  : V(akar) + たいと + おもいます
+   - Fungsi : Menyampaikan keinginan/rencana diri sendiri secara lebih halus.
+   - Contoh : また にほんへ いきたいと おもいます。(Saya berpikir ingin pergi ke Jepang lagi.)
+
+2. Memberikan Alasan atas Pengalaman Lampau
+   - Rumus  : [Kalimat Lampau] + から
+   - Contoh : とても おもしろかったですから、また みたいです。
+
+
+================================================================================
+BAGIAN 2: IRODORI ELEMENTARY 1 (初級1 / SHOKYUU 1 - LEVEL A2)
+================================================================================
+
+--- BAB 1: わたしはちゅうごくのペキンからきました (Saya Datang dari Beijing) ---
+1. Memberikan Penjelasan / Meminta Konfirmasi (〜んです)
+   - Rumus  : V(F.Biasa) / い-Adj + んです (atau のです)
+              な-Adj + な + んです / N + な + んです
+   - Fungsi : Menjelaskan alasan/latar belakang situasi, atau bertanya meminta penjelasan (〜んですか).
+   - Contoh : どうして おくれたんですか。―バスが こなかったんです。
+
+2. Menyebut Nama / Sebutan Spesifik
+   - Rumus  : N1 + という + N2
+   - Fungsi : Menjelaskan N2 yang bernama N1.
+   - Contoh : バリという しまから きました。(Saya datang dari pulau bernama Bali.)
+
+3. Tentang / Mengenai Topik
+   - Rumus  : N + について
+   - Fungsi : Menandai topik yang dibicarakan, ditulis, atau dipelajari.
+   - Contoh : にほんの ぶんかに ついて べんきょうしています。
+
+--- BAB 2: どんなまちですか (Kota yang Seperti Apa?) ---
+1. Anak Kalimat Pewatas Kata Benda (Modifier Clause)
+   - Rumus  : F.Biasa (N + の / な-Adj + な) + N
+   - Fungsi : Menerangkan kata benda dengan sebuah kalimat lengkap di depannya.
+   - Contoh : これは きのう かった ほんです。(Ini adalah buku yang saya beli kemarin.)
+
+2. Penghubung Kontras atau Pembuka Kalimat (〜が)
+   - Rumus  : Kalimat1 + が、Kalimat2
+   - Fungsi : Menghubungkan dua hal berlawanan ("tetapi") atau menjadi pengantar obrolan sopan.
+   - Contoh : この まちは せまいですが、とても にぎやかです。
+
+3. Menyebutkan Beberapa Alasan atau Ciri Sekaligus (〜し)
+   - Rumus  : F.Biasa + し、F.Biasa + し
+   - Fungsi : Menggabungkan beberapa kualitas/alasan yang searah ("sudah ~, ~ lagi").
+   - Contoh : この みせは やすいし、おいしいし、いつも いきます。
+
+--- BAB 3: まいにち8じはんごろいえをでます (Keluar Rumah Sekitar 8.30) ---
+1. Saat / Ketika Melakukan Sesuatu (〜とき)
+   - Rumus  : V-る / V-た / V-ない + とき
+              い-Adj + とき / な-Adj + な + とき / N + の + とき
+   - Fungsi : Menunjukkan waktu/situasi terjadinya kejadian utama.
+   - Contoh : ひまな とき、ゲームを します。(Saat senggang, saya bermain game.)
+
+2. Setelah Melakukan Sesuatu (〜てから)
+   - Rumus  : V-て + から、Kalimat2
+   - Fungsi : Menegaskan aksi kedua dilakukan setelah aksi pertama selesai.
+   - Contoh : しごとが おわってから、スーパーへ いきます。
+
+3. Perkiraan Titik Waktu (〜ごろ)
+   - Rumus  : [Titik Waktu] + ごろ
+   - Fungsi : Menyatakan perkiraan waktu ("sekitar pukul ~").
+   - Contoh : まいにち 7じごろ おきます。(Setiap hari bangun sekitar jam 7.)
+
+4. Partikel を untuk Titik Keberangkatan / Lintasan
+   - Rumus  : [Tempat] + を + でます / わたります / あるきます
+   - Fungsi : Menunjukkan tempat yang ditinggalkan atau dilintasi.
+   - Contoh : 8じに いえを でます。(Keluar rumah pada jam 8.)
+
+--- BAB 4: あついですね (Panas Ya) ---
+1. Kelihatannya / Tampaknya (Pengamatan Visual)
+   - Rumus  : V(akar) + そうです
+              い-Adj (coret い) + そうです (Pengecualian: いい -> よさそうです)
+              な-Adj (tanpa な) + そうです
+   - Fungsi : Menyatakan dugaan berdasarkan apa yang terlihat langsung oleh mata.
+   - Contoh : あめが ふりそうです。(Kelihatannya akan turun hujan.)
+
+2. Perubahan Keadaan (Menjadi ~)
+   - Rumus  : N + に + なります
+              な-Adj (tanpa な) + に + なります
+              い-Adj (ubah い -> く) + なります
+   - Fungsi : Menyatakan perubahan kondisi dari satu keadaan ke keadaan lain.
+   - Contoh : もうすぐ はるに なります。(Sebentar lagi menjadi musim semi.)
+
+3. Menyatakan Opini / Dugaan Pribadi
+   - Rumus  : F.Biasa + と + おもいます
+   - Fungsi : Menyatakan pendapat atau perkiraan pembicara ("Menurut saya ~").
+   - Contoh : あしたは はれると おもいます。(Menurut saya besok akan cerah.)
+
+--- BAB 5: いつもなにをしていますか (Selalu Melakukan Apa?) ---
+1. Menyebutkan Contoh Aktivitas Secara Acak (〜たり〜たり)
+   - Rumus  : V1-た + り、V2-た + り + します
+   - Fungsi : Menyebutkan beberapa contoh kegiatan yang dilakukan di antara kegiatan lainnya.
+   - Contoh : やすみの ひは そうじを したり、かいものを したり します。
+
+2. Kadang-kadang / Sesekali Melakukan Sesuatu
+   - Rumus  : V-る + ことが + あります
+   - Fungsi : Menyatakan aktivitas yang sesekali terjadi (tidak rutin).
+   - Contoh : ときどき ともだちと カラオケに いく ことが あります。
+
+3. Tujuan Tindakan (Untuk / Demi ~)
+   - Rumus  : V-る + ために
+              N + の + ために
+   - Fungsi : Menyatakan tujuan yang jelas dan disengaja.
+   - Contoh : にほんへ いく ために、にほんごを べんきょうしています。
+
+--- BAB 6: ここでたべてもいいですか (Boleh Makan di Sini?) ---
+1. Meminta / Memberi Izin
+   - Rumus  : V-て + も + いいです / いいですか
+   - Fungsi : Menyatakan bahwa suatu tindakan diperbolehkan ("Boleh ~").
+   - Contoh : ここで たべても いいですか。(Bolehkah makan di sini?)
+
+2. Larangan Aturan
+   - Rumus  : V-て + は + いけません
+   - Fungsi : Menyatakan larangan keras berdasarkan aturan ("Tidak boleh ~").
+   - Contoh : ここに くるまを とめては いけません。(Tidak boleh memarkir mobil di sini.)
+
+3. Tidak Perlu / Tidak Wajib
+   - Rumus  : V-ない (coret い) + くても + いいです
+   - Fungsi : Menyatakan bahwa suatu aksi tidak diharuskan ("Tidak perlu ~").
+   - Contoh : あしたは こなくても いいです。(Besok tidak perlu datang.)
+
+4. Kewajiban / Keharusan
+   - Rumus  : V-ない (coret い) + ければ + なりません
+              V-ない + と + いけません
+   - Fungsi : Menyatakan kewajiban ("Harus melakukan V").
+   - Contoh : まいにち くすりを のまなければ なりません。(Setiap hari harus minum obat.)
+
+--- BAB 7: どこでかったんですか (Beli di Mana?) ---
+1. Terlalu / Berlebihan (〜すぎます)
+   - Rumus  : V(akar) + すぎます / すぎて
+              い-Adj (coret い) + すぎます / すぎて
+              な-Adj (tanpa な) + すぎます / すぎて
+   - Fungsi : Menyatakan kadar/jumlah yang melampaui batas wajar.
+   - Contoh : この ズボンは おおきすぎて、はけません。(Celana ini terlalu besar sehingga tidak bisa dipakai.)
+
+2. Mudah di-V / Sulit di-V
+   - Rumus  : V(akar) + やすいです (Mudah dilakukan)
+              V(akar) + にくいです (Sulit dilakukan)
+   - Fungsi : Menjelaskan sifat kemudahan atau kesulitan suatu tindakan.
+   - Contoh : この ペンは かきやすいです。(Pena ini mudah dipakai menulis.)
+
+3. Memutuskan Pilihan (Saat Memesan / Belanja)
+   - Rumus  : N + に + します
+   - Fungsi : Menyatakan keputusan memilih satu opsi di antara pilihan yang ada.
+   - Contoh : わたしは カレーに します。(Saya pilih kari saja.)
+
+--- BAB 8: もうちょっとやすくなりませんか (Bisa Lebih Murah Sedikit?) ---
+1. Pertanyaan Tidak Langsung "Apakah ~ atau tidak"
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + か + どうか
+   - Fungsi : Menyisipkan pertanyaan Ya/Tidak ke dalam kalimat utama.
+   - Contoh : サイズが あうか どうか、きて みます。(Saya coba pakai untuk tahu pas atau tidak ukurannya.)
+
+2. Pertanyaan Tidak Langsung dengan Kata Tanya
+   - Rumus  : [Kata Tanya] + F.Biasa (N/な-Adj tanpa だ) + か
+   - Fungsi : Menyisipkan klausa tanya informatif ke dalam kalimat utama.
+   - Contoh : いくらに なるか、きいて みます。(Saya coba tanya jadi berapa harganya.)
+
+3. Memilih Sisi yang Lebih Baik
+   - Rumus  : V-る / V-ない / い-Adj / な-Adj な / N の + ほう + が + いいです
+   - Fungsi : Menyatakan preferensi atas salah satu opsi.
+   - Contoh : もう すこし ちいさい ほうが いいです。(Yang sedikit lebih kecil lebih baik.)
+
+--- BAB 9: バスツアーにさんかしたいんですが (Ingin Ikut Tur Bus...) ---
+1. Pengantar Permintaan / Topik dengan Halus
+   - Rumus  : V(akar) + たいんですが、〜 (atau F.Biasa + んですが、〜)
+   - Fungsi : Menyampaikan latar belakang keinginan sebelum mengajukan permintaan/pertanyaan.
+   - Contoh : バスツアーに さんかしたいんですが、どこで もうしこみますか。
+
+2. Meminta Tolong dengan Gradasi Kesopanan
+   - Rumus  : V-て + いただけませんか (Sangat sopan - ke orang asing/atasan)
+              V-て + もらえませんか (Sopan standar)
+              V-て + くれませんか (Sopon akrab - ke teman)
+   - Contoh : しゃしんを とって いただけませんか。(Bisakah Anda tolong ambilkan foto?)
+
+3. Sebelum Melakukan Sesuatu
+   - Rumus  : V-る + まえに、〜
+              N + の + まえに、〜
+   - Fungsi : Menunjukkan urutan waktu sebelum kejadian utama.
+   - Contoh : りょこうに いく まえに、ホテルを よやくします。
+
+--- BAB 10: おすすめのばしょ (Tempat yang Direkomendasikan) ---
+1. Menyatakan Pengalaman (Pernah ~)
+   - Rumus  : V-た + ことが + あります / ありません
+   - Fungsi : Menyatakan pernah atau tidak pernah mengalami suatu hal di masa lalu.
+   - Contoh : ふじさんに のぼった ことが あります。(Saya pernah mendaki Gunung Fuji.)
+
+2. Memberi Saran Ringan
+   - Rumus  : V-たら + いいですよ
+   - Fungsi : Memberikan rekomendasi santai kepada lawan bicara ("Sebaiknya ~ lho").
+   - Contoh : おんせんに いったら いいですよ。(Sebaiknya pergi ke pemandian air panas lho.)
+
+3. Melakukan Dua Aksi Bersamaan (Sambil ~)
+   - Rumus  : V1(akar) + ながら、V2
+   - Fungsi : Melakukan aksi V1 dan V2 secara bersamaan oleh subjek yang sama (V2 aksi utama).
+   - Contoh : おんがくを ききながら、べんきょうします。(Belajar sambil mendengarkan musik.)
+
+--- BAB 11: もうすぐおしょうがつですね (Sebentar Lagi Tahun Baru Ya) ---
+1. Niat atau Rencana Pribadi
+   - Rumus  : V-る / V-ない + つもりです
+   - Fungsi : Menyatakan tekad atau rencana pribadi di masa depan ("Berniat ~").
+   - Contoh : らいねん くにへ かえる つもりです。(Tahun depan saya berniat pulang ke negara asal.)
+
+2. Jadwal atau Agenda Terencana
+   - Rumus  : V-る + よていです
+              N + の + よていです
+   - Fungsi : Menyatakan agenda/jadwal yang sudah ditetapkan.
+   - Contoh : 3じに とうきょうに つく よていです。(Dijadwalkan tiba di Tokyo pukul 3.)
+
+3. Selama / Di Sela-sela Waktu
+   - Rumus  : V-ている / N の + あいだ (Selama durasi penuh)
+              V-ている / N の + あいだに (Di suatu titik di dalam durasi tersebut)
+   - Contoh : やすみの あいだに、ともだちに あいます。(Selama liburan, saya akan bertemu teman.)
+
+--- BAB 12: しょくじ (Makan Bersama) ---
+1. Mencoba Melakukan Sesuatu
+   - Rumus  : V-て + みます
+   - Fungsi : Mencoba melakukan suatu tindakan untuk mengetahui rasanya/hasilnya.
+   - Contoh : おいしいですから、たべて みてください。(Karena enak, silakan coba makan.)
+
+2. Perumpamaan / Dugaan (Sepertinya / Seperti ~)
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + みたい / らしい
+   - Fungsi : Menyatakan kemiripan atau dugaan berdasarkan informasi/kesan.
+   - Contoh : らいしゅうから さむく なる みたいです。(Sepertinya mulai minggu depan akan menjadi dingin.)
+
+3. Menawarkan Sesuatu Sebagai Contoh Ringan
+   - Rumus  : N + でも + どうですか
+   - Fungsi : Mengusulkan suatu hal secara santai tanpa memaksa ("Bagaimana kalau ~?").
+   - Contoh : おちゃでも どうですか。(Bagaimana kalau minum teh atau semacamnya?)
+
+--- BAB 13: しごと (Pekerjaan) ---
+1. Melakukan Sesuatu Sebagai Persiapan
+   - Rumus  : V-て + おきます
+   - Fungsi : Menyelesaikan tindakan terlebih dahulu untuk keperluan mendatang atau membiarkan kondisi tetap demikian.
+   - Contoh : かいぎの まえに、しりょうを コピーして おきます。
+
+2. Bentuk Potensial (Menyatakan Kemampuan)
+   - Rumus  : Kelompok I   : Ubah vokal akhir -u menjadi -e + る (かく -> かける)
+              Kelompok II  : Ubah -る menjadi -られる (たべる -> たべられる)
+              Kelompok III : する -> できる / くる -> こられる
+   - Catatan: Objek kata kerja potensial biasanya ditandai partikel が (N が V-可能).
+   - Contoh : にほんごの しんぶんが よめます。(Bisa membaca koran bahasa Jepang.)
+
+3. Pembatasan dengan Makna Kurang ("Hanya ~")
+   - Rumus  : N + しか + V-ない
+   - Fungsi : Menekankan jumlah/hal yang sangat terbatas (wajib diikuti bentuk negatif).
+   - Contoh : ひらがなしか かけません。(Hanya bisa menulis hiragana.)
+
+--- BAB 14: びょうきとけが (Sakit dan Cedera) ---
+1. Saran Kuat (Sebaiknya ~ / Sebaiknya tidak ~)
+   - Rumus  : V-た + ほうが + いいです (Sebaiknya melakukan)
+              V-ない + ほうが + いいです (Sebaiknya tidak melakukan)
+   - Fungsi : Memberikan nasihat yang cukup kuat.
+   - Contoh : びょういんへ いった ほうが いいですよ。(Sebaiknya pergi ke rumah sakit lho.)
+
+2. Terlanjur Melakukan Secara Berlebihan
+   - Rumus  : V(akar) + すぎてしまいました
+   - Fungsi : Menyesali tindakan yang dilakukan melampaui batas.
+   - Contoh : きのう おさけを のみすぎてしまいました。(Kemarin terlanjur minum terlalu banyak sake.)
+
+3. Alasan yang Sopan dan Objektif (〜ので)
+   - Rumus  : F.Biasa (N + な / な-Adj + な) + ので
+   - Fungsi : Menyatakan alasan secara lebih halus dan objektif dibandingkan から.
+   - Contoh : ねつが あるので、きょうは やすみます。(Karena demam, hari ini saya libur.)
+
+--- BAB 15: ぼうさい (Mitigasi Bencana) ---
+1. Pengandaian atau Kondisi (Kalau / Setelah ~)
+   - Rumus  : V-た + ら、〜
+              い-Adj (coret い) + かったら、〜
+              な-Adj / N + だったら、〜
+   - Fungsi : Menyatakan syarat pengandaian atau aksi yang terjadi setelah syarat terpenuhi.
+   - Contoh : じしんが おきたら、つくえの したに はいって ください。
+
+2. Konsekuensi Alami / Otomatis / Petunjuk Arah (〜と)
+   - Rumus  : V-る / V-ない + と、〜
+   - Fungsi : Menyatakan akibat yang pasti terjadi secara otomatis jika aksi pertama dilakukan.
+   - Contoh : この ボタンを おすと、ドアが あきます。(Kalau menekan tombol ini, pintu terbuka.)
+
+3. Menyelesaikan Tuntas / Penyesalan Tidak Sengaja
+   - Rumus  : V-て + しまいます / しまいました
+   - Fungsi : Menunjukkan aksi selesai 100% atau rasa kecewa/tidak sengaja.
+   - Contoh : さいふを おとしてしまいました。(Saya tidak sengaja menjatuhkan dompet.)
+
+--- BAB 16: せいかつのルール (Aturan Kehidupan Sehari-hari) ---
+1. Berusaha Membiasakan Diri
+   - Rumus  : V-る / V-ない + ように + しています
+   - Fungsi : Menyatakan upaya rutin untuk menjaga atau membangun kebiasaan baik.
+   - Contoh : まいにち やさいを たべる ように しています。(Saya berusaha makan sayur setiap hari.)
+
+2. Perubahan Kebiasaan / Kemampuan
+   - Rumus  : V-る / V-ない + ように + なりました
+   - Fungsi : Menunjukkan perubahan keadaan dari sebelumnya tidak bisa/tidak biasa menjadi bisa/biasa.
+   - Contoh : かんじが よめる ように なりました。(Sudah menjadi bisa membaca kanji.)
+
+3. Menyampaikan Pesan / Instruksi Tidak Langsung
+   - Rumus  : V-る / V-ない + ように + いってください / つたえてください
+   - Fungsi : Meminta seseorang menyampaikan pesan agar pihak ketiga melakukan/tidak melakukan V.
+   - Contoh : ここに ゴミを すてない ように いってください。
+
+--- BAB 17: しゅみ・たのしみ (Hobi & Kesenangan) ---
+1. Tertarik / Berminat pada Sesuatu
+   - Rumus  : N + に + きょうみが + あります
+   - Fungsi : Menyatakan ketertarikan pada suatu bidang atau objek.
+   - Contoh : にほんの アニメに きょうみが あります。(Saya tertarik pada anime Jepang.)
+
+2. Nominalisasi Kata Kerja dengan の
+   - Rumus  : V-る + のが + じょうずです / へたです / すきです / きらいです
+   - Fungsi : Mengubah kata kerja menjadi kata benda yang diikuti kata sifat evaluasi.
+   - Contoh : えを かく のが すきです。(Saya suka menggambar.)
+
+3. Berkat ~ (Positif) vs Gara-gara ~ (Negatif)
+   - Rumus  : F.Biasa (N + の / な-Adj + な) + おかげで (Hasil baik/syukur)
+              F.Biasa (N + の / な-Adj + な) + せいで (Hasil buruk/menyalahkan)
+   - Contoh : せんせいの おかげで、ごうかくしました。(Berkat guru, saya lulus.)
+
+--- BAB 18: これまでとこれから (Masa Lalu dan Masa Depan) ---
+1. Keputusan yang Diambil Sendiri
+   - Rumus  : V-る / V-ない + ことに + しました
+   - Fungsi : Menyatakan keputusan yang dibuat atas kehendak pembicara sendiri.
+   - Contoh : らいげつから にほんごの きょうしつに かよう ことに しました。
+
+2. Keputusan dari Pihak Luar / Organisasi
+   - Rumus  : V-る / V-ない + ことに + なりました
+   - Fungsi : Menyatakan ketetapan yang diputuskan oleh aturan, atasan, atau keadaan.
+   - Contoh : らいねん とうきょうで はたらく ことに なりました。
+
+3. Kata Kerja Majemuk (Terus ~ / Selesai ~)
+   - Rumus  : V(akar) + つづけます (Terus melanjutkan V)
+              V(akar) + おわります (Selesai mengerjakan V)
+   - Contoh : これからも べんきょうを つづけます。(Ke depannya juga akan terus belajar.)
+
+
+================================================================================
+BAGIAN 3: IRODORI ELEMENTARY 2 (初級2 / SHOKYUU 2 - LEVEL A2)
+================================================================================
+
+--- BAB 1: あたらしいともだち (Teman Baru) ---
+1. Menyampaikan Kabar Burung / Informasi dari Orang Lain (〜そうです)
+   - Rumus  : F.Biasa + そうです
+   - Fungsi : Meneruskan informasi yang didengar atau dibaca ("Katanya ~").
+   - Contoh : 田中さんは らいしゅう りょこうに いく そうです。(Katanya Tanaka minggu depan pergi wisata.)
+
+2. Bentuk Kasual Kutipan / Kabar Burung (〜って)
+   - Rumus  : F.Biasa + って
+   - Fungsi : Bentuk percakapan santai pengganti 〜と, 〜といいます, atau 〜そうです.
+   - Contoh : あした あめが ふるって。(Katanya besok turun hujan lho.)
+
+3. Pertentangan dengan Rasa Heran / Kecewa (Padahal ~)
+   - Rumus  : F.Biasa (N + な / な-Adj + な) + のに
+   - Fungsi : Menyatakan hasil yang bertentangan dengan ekspektasi.
+   - Contoh : べんきょうした のに、テストが できませんでした。(Padahal sudah belajar, tapi tidak bisa mengerjakan tes.)
+
+--- BAB 2: みせでたべる (Makan di Restoran) ---
+1. Keadaan Hasil dari Tindakan yang Disengaja
+   - Rumus  : N + が + V(transitif)-て + あります
+   - Fungsi : Menjelaskan kondisi benda yang sengaja diatur/dipersiapkan oleh seseorang.
+   - Contoh : かべに ポスターが はって あります。(Di dinding tertempel poster.)
+
+2. Menyelesaikan Sepenuhnya / Penyesalan
+   - Rumus  : V-て + しまいます / しまいました
+   - Fungsi : Menunjukkan aksi selesai tuntas (seperti makan habis) atau penyesalan.
+   - Contoh : おいしかったので、ぜんぶ たべてしまいました。(Karena enak, saya makan habis semuanya.)
+
+3. Melulu / Terus-menerus / Baru Saja (〜ばかり)
+   - Rumus  : V-て + ばかり + います (Melulu melakukan V)
+              N + ばかり (Melulu N)
+              V-た + ばかり + です (Baru saja selesai melakukan V)
+   - Contoh : さいきん ラーメンばかり たべています。(Akhir-akhir ini makan ramen melulu.)
+
+--- BAB 3: りょこう (Wisata / Perjalanan) ---
+1. Niat / Rencana Matang (Bentuk Maksud + と おもっています)
+   - Rumus  : V-意向 + と + おもっています
+   - Cara ubah V-意向:
+     * Kel. I  : Ubah vokal -u menjadi -o + う (いく -> いこう)
+     * Kel. II : Ubah -る menjadi -よう (たべる -> たべよう)
+     * Kel. III: する -> しよう / くる -> こよう
+   - Contoh : なつやすみに ほっかいどうへ いこうと おもっています。
+
+2. Demi / Untuk Tujuan
+   - Rumus  : V-る + ために / N + の + ために
+   - Contoh : しゃしんを とる ために、いい カメラを かいました。
+
+3. Bentuk Syarat Pengandaian (Bentuk ば)
+   - Rumus  : V-ば / い-Adj (ubah い -> ければ) / な-Adj・N + なら
+   - Cara ubah V-ば:
+     * Kel. I  : Ubah vokal -u menjadi -e + ば (いく -> いけば)
+     * Kel. II : Ubah -る menjadi -れば (たべる -> たべれば)
+     * Kel. III: する -> すれば / くる -> くれば
+   - Contoh : じかんが あれば、おてらにも いきたいです。(Kalau ada waktu, ingin pergi ke kuil juga.)
+
+--- BAB 4: イベント (Acara / Event) ---
+1. Bentuk Pasif (V-受身)
+   - Rumus  : Kel. I   : Ubah vokal -u menjadi -a + れる (かく -> かかれる)
+              Kel. II  : Ubah -る menjadi -られる (たべる -> たべられる)
+              Kel. III : する -> される / くる -> こられる
+   - Fungsi : Digunakan saat acara diadakan atau suatu hal dikenai tindakan.
+   - Contoh : この おまつりは まいとし 8がつに おこなわれます。(Festival ini diadakan setiap tahun bulan Agustus.)
+
+2. Pelaku dalam Kalimat Pasif / Tergantung Pada
+   - Rumus  : N + に + よって
+   - Fungsi : Menandai pencipta/penyelenggara dalam kalimat pasif atau variasi ("tergantung pada N").
+   - Contoh : くにに よって、しゅうかんが ちがいます。(Tergantung negaranya, kebiasaannya berbeda.)
+
+3. Menginginkan Orang Lain Melakukan Sesuatu
+   - Rumus  : [Orang] + に + V-て + ほしいです
+   - Fungsi : Menyatakan keinginan agar lawan bicara/orang lain melakukan sesuatu.
+   - Contoh : ともだちに てつだって ほしいです。(Saya ingin teman membantu saya.)
+
+--- BAB 5: いつもありがとう (Terima Kasih Selalu) ---
+1. Memberi dan Menerima Benda
+   - Rumus  : [Pemberi] は [Penerima] に N を あげます (Saya/orang lain memberi ke orang lain)
+              [Pemberi] は (わたしに) N を くれます (Orang lain memberi kepada saya/keluarga saya)
+              [Penerima] は [Pemberi] に/から N を もらいます (Menerima dari seseorang)
+   - Contoh : ともだちが わたしに おみやげを くれました。(Teman memberi oleh-oleh kepada saya.)
+
+2. Memberi dan Menerima Bantuan Tindakan
+   - Rumus  : V-て + あげます (Memberikan bantuan kepada orang lain)
+              V-て + くれます (Orang lain memberikan bantuan kepada saya)
+              V-て + もらいます (Menerima bantuan dari orang lain)
+   - Contoh : せんせいに にほんごを おしえて もらいました。(Saya diajari bahasa Jepang oleh guru.)
+
+3. Tujuan Agar / Supaya (〜ように)
+   - Rumus  : V-る / V-ない + ように
+   - Fungsi : Menyatakan tujuan yang bersifat kondisi/keadaan (sering dengan V potensial atau negatif).
+   - Contoh : わすれない ように、メモを とります。(Supaya tidak lupa, saya mencatat.)
+
+--- BAB 6: わたしのまちのじまん (Kebanggaan Kotaku) ---
+1. Terkenal Karena / Dengan Sesuatu
+   - Rumus  : [Tempat] + は + N + で + ゆうめいです
+   - Fungsi : Partikel で menandai alasan/ciri khas yang membuat tempat itu terkenal.
+   - Contoh : バリは きれいな うみで ゆうめいです。(Bali terkenal dengan pantainya yang indah.)
+
+2. Disebut atau Dijuluki Sebagai
+   - Rumus  : [Nama/Julukan] + と + よばれています
+   - Fungsi : Bentuk pasif dari よびます untuk menyatakan sebutan umum.
+   - Contoh : この まちは 「みずの みやこ」と よばれています。(Kota ini dijuluki "Ibu Kota Air".)
+
+3. Tidak Hanya ~, Tetapi Juga ~
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + だけでなく、〜も
+   - Fungsi : Menambahkan informasi kedua di atas informasi pertama.
+   - Contoh : この まちは けしきが きれいな だけでなく、たべものも おいしいです。
+
+--- BAB 7: せいかつのなかのルール (Aturan dalam Kehidupan) ---
+1. Bentuk Larangan Keras (Rambu / Papan Peringatan)
+   - Rumus  : V-る + な
+   - Fungsi : Larangan mutlak yang sering tertulis pada rambu atau tanda peringatan ("Dilarang ~!").
+   - Contoh : はいるな (Dilarang masuk!) / さわるな (Jangan sentuh!)
+
+2. Bentuk Perintah (V-命令)
+   - Rumus  : Kel. I   : Ubah vokal -u menjadi -e (いく -> いけ / とまる -> とまれ)
+              Kel. II  : Ubah -る menjadi -ろ (たべる -> たべろ / みろ)
+              Kel. III : する -> しろ / くる -> こい
+   - Fungsi : Instruksi langsung pada rambu lalu lintas atau situasi darurat.
+   - Contoh : とまれ (Berhenti!) / にげろ (Lari / Mengungsilah!)
+
+3. Tertulis Bahwa ~ / Dibaca ~
+   - Rumus  : [Isi Teks] + と + かいて あります
+              [Kanji] + は + [Cara Baca] + と + よみます
+   - Contoh : ここに 「きけん」と かいて あります。(Di sini tertulis "Bahaya".)
+
+--- BAB 8: ゴミのすてかた (Cara Membuang Sampah) ---
+1. Tanpa Melakukan Sesuatu
+   - Rumus  : V-ない (ubah ない -> ずに)  [Pengecualian: する -> せずに]
+              V-ない + で
+   - Fungsi : Melakukan aksi utama tanpa melakukan aksi pertama.
+   - Contoh : じしょを つかわずに、しんぶんを よみます。(Membaca koran tanpa menggunakan kamus.)
+
+2. Sebagai Pengganti ~
+   - Rumus  : V-る + かわりに
+              N + の + かわりに
+   - Fungsi : Menggantikan peran suatu benda atau tindakan dengan yang lain.
+   - Contoh : ゴミぶくろの かわりに、スーパーの ふくろを つかいます。
+
+3. Menanyakan Saran Cara Melakukan Sesuatu
+   - Rumus  : [Kata Tanya] + V-ば + いいですか
+   - Fungsi : Meminta petunjuk tentang bagaimana seharusnya bertindak ("Sebaiknya ~ bagaimana?").
+   - Contoh : この ゴミは どこに だせば いいですか。(Sampah ini sebaiknya dibuang di mana?)
+
+--- BAB 9: にもつをおくる (Mengirim Paket) ---
+1. Konfirmasi Apakah ~ atau Tidak
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + かどうか
+   - Contoh : あした にもつが とどく かどうか、しらべます。(Saya cek apakah besok paketnya sampai atau tidak.)
+
+2. Batas Waktu Maksimal (Paling Lambat ~)
+   - Rumus  : [Waktu] + までに + V
+   - Fungsi : Menunjukkan tenggat waktu akhir sebelum suatu aksi harus selesai (beda dengan まで yang berarti terus berlangsung sampai).
+   - Contoh : きんようびまでに レポートを だしてください。(Tolong kumpulkan laporan paling lambat hari Jumat.)
+
+3. Karakteristik Objek (Mudah ~ / Sulit ~)
+   - Rumus  : V(akar) + やすい / にくい + N
+   - Contoh : こわれやすい もの (Barang yang mudah pecah / pecah belah)
+
+--- BAB 10: しごとのせいかつ (Kehidupan Kerja) ---
+1. Bahasa Merendah kepada Atasan / Klien (Kenjougo)
+   - Rumus  : お + V(akar) + します
+              ご + N(kata serapan China / Kango) + します
+   - Fungsi : Merendahkan tindakan pembicara sendiri demi menghormati lawan bicara.
+   - Contoh : おにもつを おもちします。(Biar saya bawakan barang Anda.)
+
+2. Permintaan Sangat Sopan kepada Tamu / Pelanggan
+   - Rumus  : お + V(akar) + ください
+              ご + N(Kango) + ください
+   - Fungsi : Mempersilakan atau meminta pelanggan melakukan sesuatu secara halus.
+   - Contoh : こちらに おすわり ください。(Silakan duduk di sebelah sini.)
+
+3. Titik Waktu Aksi (Baru Saja / Sedang / Akan)
+   - Rumus  : V-る + ところです (Baru akan melakukan V)
+              V-ている + ところです (Tepat sedang melakukan V)
+              V-た + ところです (Baru saja selesai melakukan V)
+   - Contoh : いま しりょうを コピーしている ところです。(Sekarang tepat sedang memfotokopi dokumen.)
+
+--- BAB 11: かいもの (Belanja) ---
+1. Perumpamaan atau Dugaan (Seperti / Tampaknya ~)
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + みたいだ / ようだ
+              N + みたいな / ような + N2
+   - Fungsi : Mengibaratkan sesuatu atau menyatakan dugaan berdasarkan situasi.
+   - Contoh : ほんものの はな みたいです。(Seperti bunga asli.)
+
+2. Mencerminkan Ciri Khas Sejati (〜らしい)
+   - Rumus  : N + らしい + N2 (atau N + らしいです)
+   - Fungsi : Menunjukkan bahwa sesuatu memiliki sifat ideal/khas dari kategori N tersebut.
+   - Contoh : きょうは はるらしい てんきですね。(Hari ini cuaca yang khas musim semi ya.)
+
+3. Dibandingkan Dengan ~
+   - Rumus  : N + に + くらべて
+   - Fungsi : Menjadikan N sebagai pembanding.
+   - Contoh : きのうに くらべて、きょうは すずしいです。(Dibandingkan kemarin, hari ini sejuk.)
+
+--- BAB 12: けんこう (Kesehatan) ---
+1. Melakukan Sesuatu Secara Berlebihan
+   - Rumus  : V(akar) + すぎる
+   - Contoh : まいばん スマホを みすぎると、めに よくないです。
+
+2. Semakin ~, Semakin ~ (〜ば 〜ほど)
+   - Rumus  : V-ば + V-る + ほど
+              い-Adj (ubah い -> ければ) + い-Adj + ほど
+              な-Adj + なら + な-Adj な + ほど
+   - Fungsi : Menunjukkan peningkatan kondisi kedua seiring meningkatnya kondisi pertama.
+   - Contoh : にほんごは べんきょうすれば するほど、おもしろく なります。
+
+3. Berhati-hati Agar ~
+   - Rumus  : V-る / V-ない + ように + きをつけています
+   - Fungsi : Menjaga sikap/tindakan demi kesehatan atau keselamatan.
+   - Contoh : かぜを ひかない ように きをつけています。(Saya berhati-hati agar tidak masuk angin.)
+
+--- BAB 13: おいわい (Perayaan) ---
+1. Harapan (Semoga / Alangkah Baiknya Jika ~)
+   - Rumus  : F.Biasa + と + いいです / いいですね
+   - Fungsi : Mengungkapkan harapan atau doa bagi diri sendiri maupun orang lain.
+   - Contoh : はやく げんきに なると いいですね。(Semoga cepat sembuh ya.)
+
+2. Kemungkinan Sekitar 50% (Mungkin ~)
+   - Rumus  : F.Biasa (N/な-Adj tanpa だ) + かもしれません
+   - Fungsi : Menyatakan kemungkinan yang belum pasti.
+   - Contoh : あしたは あめが ふる かもしれません。(Besok mungkin akan turun hujan.)
+
+3. Keyakinan Berdasarkan Alasan Logis (Seharusnya / Pasti ~)
+   - Rumus  : F.Biasa (N + の / な-Adj + な) + はずです
+   - Fungsi : Menyatakan kesimpulan yang diyakini benar berdasarkan bukti/logika.
+   - Contoh : もう にもつは とどいている はずです。(Seharusnya paketnya sudah sampai.)
+
+--- BAB 14: まちのサービス (Layanan Kota) ---
+1. Mengenai / Tentang Topik
+   - Rumus  : N + に + ついて
+   - Contoh : ごみの だしかたに ついて せつめいします。(Menjelaskan tentang cara membuang sampah.)
+
+2. Menurut Sumber Informasi
+   - Rumus  : [Sumber Informasi N] + に + よると
+   - Fungsi : Mengutip sumber berita, buku panduan, ramalan cuaca, atau pernyataan orang.
+   - Contoh : てんきよほうに よると、あしたは はれだそうです。
+
+3. Bentuk Pasif untuk Layanan Publik / Fasilitas
+   - Rumus  : N + が + V-受身 (りようされています / つかわれています)
+   - Fungsi : Menjelaskan bagaimana fasilitas/layanan digunakan oleh masyarakat umum.
+   - Contoh : この としょかんは おおくの ひとに りようされています。
+
+--- BAB 15: ニュース (Berita) ---
+1. Melaporkan Isi Berita / Laporan
+   - Rumus  : [Sumber] + に + よると、F.Biasa + そうです
+   - Fungsi : Menggabungkan sumber informasi dengan bentuk kabar burung untuk menyampaikan berita.
+   - Contoh : ニュースに よると、たいふうが ちかづいている そうです。
+
+2. Melaporkan Terjadinya Peristiwa / Bencana
+   - Rumus  : [Peristiwa/Bencana N] + が + おこりました / ありました
+   - Contoh : きのうの よる、おおきい じしんが ありました。(Tadi malam terjadi gempa bumi besar.)
+
+3. Keadaan Pasif yang Sedang Berlangsung / Tersebar Luas
+   - Rumus  : V-受身(bentuk て) + います
+   - Fungsi : Menunjukkan kondisi pasif yang berkelanjutan atau dikenal luas.
+   - Contoh : せかいじゅうで にほんの アニメが みられています。
+
+--- BAB 16: おもいで (Kenangan) ---
+1. Perbedaan Waktu Kejadian Sebelum とき
+   - Rumus  : V-る + とき (Sebelum aksi V selesai / saat akan berangkat)
+              V-た + とき (Setelah aksi V selesai / saat sudah tiba)
+   - Contoh : にほんへ いく とき、かばんを かいました。(Saat akan pergi ke Jepang [masih di negara asal], saya membeli tas.)
+              にほんへ いった とき、かばんを かいました。(Saat sudah pergi ke Jepang [sudah di Jepang], saya membeli tas.)
+
+2. Rasa Syukur / Senang Telah Melakukan Sesuatu
+   - Rumus  : V-て / V-なくて / い-Adj (ubah い -> くて) / な-Adj + で + よかった
+   - Fungsi : Menyatakan kelegaan atau rasa syukur atas hasil suatu tindakan/keadaan.
+   - Contoh : にほんごを べんきょうして ほんとうに よかったです。(Syukurlah saya benar-benar belajar bahasa Jepang.)
+
+3. Melakukan Dua Tindakan Bersamaan
+   - Rumus  : V1(akar) + ながら、V2
+   - Contoh : しゃしんを みながら、おもいでを はなしました。(Berbicara tentang kenangan sambil melihat foto.)
+
+--- BAB 17: これからのこと (Tentang Masa Depan) ---
+1. Rencana Masa Depan
+   - Rumus  : V-意向 + と + おもっています
+   - Contoh : しょうらい じぶんの みせを もとうと おもっています。(Di masa depan saya bermaksud memiliki toko sendiri.)
+
+2. Pengandaian Masa Depan (Kalau Nanti Sudah ~)
+   - Rumus  : V-たら、V-たいです / つもりです
+   - Contoh : くにへ かえったら、かぞくに ゆっくり あいたいです。(Kalau nanti pulang ke negara asal, ingin bertemu keluarga dengan santai.)
+
+3. Bentuk Kausatif (Meminta Izin / Membiarkan / Menyuruh)
+   - Rumus  : Kel. I   : Ubah vokal -u menjadi -a + せる (いく -> いかせる)
+              Kel. II  : Ubah -る menjadi -させる (たべる -> たべさせる)
+              Kel. III : する -> させる / くる -> こさせる
+   - Pola Utama : V-使役(bentuk て) + ください / いただけませんか (Tolong izinkan saya melakukan V)
+   - Contoh : すみませんが、きょうは はやく かえらせて いただけませんか。(Maaf, bisakah Anda mengizinkan saya pulang cepat hari ini?)
+
+--- BAB 18: せいかつをふりかえる (Refleksi Kehidupan) ---
+1. Rasa Terima Kasih atas Hasil Positif
+   - Rumus  : F.Biasa (N + の / な-Adj + な) + おかげで
+   - Contoh : みなさんの おかげで、たのしく せいかつ できました。(Berkat kalian semua, saya bisa hidup dengan menyenangkan.)
+
+2. Refleksi Perubahan Kemampuan
+   - Rumus  : V-る / V-ない + ように + なりました
+   - Contoh : ひとりでも びょういんへ いける ように なりました。(Sudah menjadi bisa pergi ke rumah sakit sendirian sekalipun.)
+
+3. Keinginan Terus Melanjutkan ke Depan
+   - Rumus  : これからも + V(akar) + たいと + おもいます
+   - Contoh : これからも にほんごの べんきょうを つづけたいと おもいます。(Ke depannya juga saya ingin terus melanjutkan belajar bahasa Jepang.)
+
+================================================================================
+AKHIR DARI DAFTAR BUNPOU IRODORI (INTRODUCTORY - ELEMENTARY 2)
+================================================================================
