@@ -215,45 +215,55 @@ export function QuizSetupView({
         </div>
       </div>
 
-      {/* Question Count Selector + Manual Input + Start CTA */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-            Jumlah Soal
-          </p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {QUIZ_COUNT_OPTIONS.map(opt => {
-              const active = questionCount === opt.value;
-              return (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => onSelectCount(opt.value)}
-                  className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-indigo-600 border-indigo-600 text-white'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+      {/* Question Count Selector + Dedicated Manual Input + Start CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+              Jumlah Soal
+            </p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {QUIZ_COUNT_OPTIONS.map(opt => {
+                const active = questionCount === opt.value;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onSelectCount(opt.value)}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-indigo-600 border-indigo-600 text-white'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-            <div
-              className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-colors ${
-                isCustomCount
-                  ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 dark:border-indigo-500'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus-within:border-indigo-500'
-              }`}
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              htmlFor="inputManualQuizCount"
+              className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap"
             >
-              <label
-                htmlFor="inputManualQuizCount"
-                className="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap"
+              Atau ketik jumlah manual:
+            </label>
+            <div className="inline-flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label="Kurangi jumlah soal"
+                disabled={bankSize <= 0 || effectiveCount <= 1}
+                onClick={() => {
+                  const base = questionCount === 'all' ? bankSize : effectiveCount;
+                  onSelectCount(Math.max(1, base - 1));
+                }}
+                className="w-9 h-9 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-base inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Manual
-              </label>
+                −
+              </button>
               <input
                 id="inputManualQuizCount"
                 type="text"
@@ -263,6 +273,7 @@ export function QuizSetupView({
                 value={manualDraft}
                 placeholder={bankSize > 0 ? `1–${bankSize}` : '0'}
                 aria-label="Jumlah soal manual"
+                onFocus={e => e.currentTarget.select()}
                 onChange={e => handleManualInputChange(e.target.value)}
                 onBlur={() => {
                   commitManualInput();
@@ -274,9 +285,27 @@ export function QuizSetupView({
                     onStartQuiz(resolved);
                   }
                 }}
-                className="w-16 bg-transparent text-xs font-mono-num font-bold text-slate-900 dark:text-slate-100 text-center focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className={`w-24 h-9 px-3 rounded-xl border-2 text-sm font-mono-num font-bold text-center shadow-inner transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/25 placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
+                  isCustomCount
+                    ? 'bg-indigo-50/70 dark:bg-indigo-950/60 border-indigo-500 text-indigo-900 dark:text-indigo-100'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900'
+                }`}
               />
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">soal</span>
+              <button
+                type="button"
+                aria-label="Tambah jumlah soal"
+                disabled={bankSize <= 0 || effectiveCount >= bankSize}
+                onClick={() => {
+                  const base = questionCount === 'all' ? bankSize : effectiveCount;
+                  onSelectCount(Math.min(bankSize, base + 1));
+                }}
+                className="w-9 h-9 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-base inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                soal (maks. {bankSize})
+              </span>
             </div>
           </div>
 
