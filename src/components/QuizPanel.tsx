@@ -27,6 +27,7 @@ interface QuizPanelProps {
   book: BookData;
   allPatterns: BunpouPattern[];
   showFurigana: boolean;
+  showTranslation: boolean;
   history: QuizSessionHistoryEntry[];
   historySyncing: boolean;
   cloudEnabled: boolean;
@@ -38,6 +39,7 @@ export function QuizPanel({
   book,
   allPatterns,
   showFurigana,
+  showTranslation,
   history,
   historySyncing,
   cloudEnabled,
@@ -195,6 +197,7 @@ export function QuizPanel({
           correctSoFar={correctSoFar}
           chosenIndex={chosenIndex}
           showFurigana={showFurigana}
+          showTranslation={showTranslation}
           onSelectOption={handleSelectOption}
           onNext={handleNextQuestion}
           onCancel={() => setPhase('setup')}

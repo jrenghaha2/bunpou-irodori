@@ -13,6 +13,7 @@ interface QuizRunViewProps {
   correctSoFar: number;
   chosenIndex: number | null;
   showFurigana: boolean;
+  showTranslation: boolean;
   onSelectOption: (optionIndex: number) => void;
   onNext: () => void;
   onCancel: () => void;
@@ -25,6 +26,7 @@ export function QuizRunView({
   correctSoFar,
   chosenIndex,
   showFurigana,
+  showTranslation,
   onSelectOption,
   onNext,
   onCancel,
@@ -78,7 +80,7 @@ export function QuizRunView({
       {/* Question Prompt */}
       <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 p-4 sm:p-5 space-y-3">
         <p className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 leading-relaxed">
-          {question.prompt}
+          {showTranslation ? question.prompt : (question.promptWithoutTranslation ?? question.prompt)}
         </p>
 
         {question.japanesePrompt ? (

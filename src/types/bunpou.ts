@@ -129,6 +129,7 @@ export interface QuizQuestion {
   type: QuizQuestionType;
   pattern: BunpouPattern;
   prompt: string;
+  promptWithoutTranslation?: string;
   japanesePrompt?: string;
   japaneseFull?: string;
   options: string[];

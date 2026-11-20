@@ -18,6 +18,7 @@ type ListStatusFilter = 'all' | 'unmastered' | 'mastered' | 'hard';
 interface BunpouListPanelProps {
   patterns: BunpouPattern[];
   showFurigana: boolean;
+  showTranslation: boolean;
   masteredSet: Set<string>;
   hardSet: Set<string>;
   bookShortTitle: string;
@@ -29,6 +30,7 @@ interface BunpouListPanelProps {
 export function BunpouListPanel({
   patterns,
   showFurigana,
+  showTranslation,
   masteredSet,
   hardSet,
   bookShortTitle,
@@ -354,7 +356,7 @@ export function BunpouListPanel({
                               <p className="text-sm sm:text-base text-slate-900 dark:text-slate-50 font-medium">
                                 <JapaneseText text={ex.japanese} showFurigana={showFurigana} />
                               </p>
-                              {ex.translation ? (
+                              {showTranslation && ex.translation ? (
                                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                                   {ex.translation}
                                 </p>

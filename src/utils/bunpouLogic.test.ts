@@ -190,6 +190,10 @@ test('quiz generator preserves Furigana in cloze, matches exact example translat
       q.prompt.includes(matchedExample.translation),
       `Cloze translation hint did not match blanked example on ${q.id}`
     );
+    assert.ok(
+      q.promptWithoutTranslation && !q.promptWithoutTranslation.includes(matchedExample.translation),
+      `Cloze promptWithoutTranslation should hide Indonesian translation on ${q.id}`
+    );
 
     if (q.japanesePrompt && /\{[^{}|]+\|[^{}|]+\}/.test(q.japanesePrompt)) {
       sawRubyPreserved = true;
@@ -341,5 +345,11 @@ test('Modal focus effect depends only on [open], Flashcard Space shortcut exclud
   assert.match(setupSrc, /type="text"/);
   assert.match(setupSrc, /onStartQuiz\(resolved\)/);
   assert.match(syncSrc, /scheduleBookProgressWrite\(u, bookId\);/);
+
+  const headerSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/components/AppHeader.tsx'),
+    'utf8'
+  );
+  assert.match(headerSrc, /id="btnToggleTranslation"/);
 });
 

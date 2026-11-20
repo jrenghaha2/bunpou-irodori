@@ -17,6 +17,7 @@ interface FlashcardPanelProps {
   currentIndex: number;
   isFlipped: boolean;
   showFurigana: boolean;
+  showTranslation: boolean;
   deckFilter: DeckStatusFilter;
   masteredSet: Set<string>;
   hardSet: Set<string>;
@@ -37,6 +38,7 @@ export function FlashcardPanel({
   currentIndex,
   isFlipped,
   showFurigana,
+  showTranslation,
   deckFilter,
   masteredSet,
   hardSet,
@@ -281,7 +283,7 @@ export function FlashcardPanel({
                               <p className="text-sm sm:text-base text-slate-900 dark:text-slate-50 font-medium">
                                 <JapaneseText text={ex.japanese} showFurigana={showFurigana} />
                               </p>
-                              {ex.translation ? (
+                              {showTranslation && ex.translation ? (
                                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                                   {ex.translation}
                                 </p>

@@ -4,8 +4,10 @@ import {
   buildBackupPayload,
   commitScopedProgressTransaction,
   loadGlobalFuriganaPref,
+  loadGlobalTranslationPref,
   safeLoadSet,
   saveGlobalFuriganaPref,
+  saveGlobalTranslationPref,
   validateAndParseBackup,
   type StorageLike,
 } from './storage';
@@ -56,13 +58,19 @@ test('buildBackupPayload and validateAndParseBackup round-trip validly, reject w
   assert.deepEqual(legacyParsed.rejectedIds, ['unknown-id']);
 });
 
-test('global furigana preference persists cleanly via storage helpers', () => {
+test('global furigana and translation preferences persist cleanly via storage helpers', () => {
   const mem = createMemoryStorage();
   assert.equal(loadGlobalFuriganaPref(mem), true);
   saveGlobalFuriganaPref(false, mem);
   assert.equal(loadGlobalFuriganaPref(mem), false);
   saveGlobalFuriganaPref(true, mem);
   assert.equal(loadGlobalFuriganaPref(mem), true);
+
+  assert.equal(loadGlobalTranslationPref(mem), true);
+  saveGlobalTranslationPref(false, mem);
+  assert.equal(loadGlobalTranslationPref(mem), false);
+  saveGlobalTranslationPref(true, mem);
+  assert.equal(loadGlobalTranslationPref(mem), true);
 });
 
 test('commitScopedProgressTransaction writes atomically and rolls back on write error', () => {

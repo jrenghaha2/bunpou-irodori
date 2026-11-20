@@ -7,6 +7,7 @@ import {
   Cloud,
   Download,
   FolderOpen,
+  Languages,
   LogIn,
   LogOut,
   Moon,
@@ -18,6 +19,8 @@ import {
 export interface AppHeaderPreferences {
   showFurigana: boolean;
   onToggleFurigana: () => void;
+  showTranslation: boolean;
+  onToggleTranslation: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }
@@ -76,7 +79,14 @@ export function AppHeader({
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
-  const { showFurigana, onToggleFurigana, isDark, onToggleTheme } = preferences;
+  const {
+    showFurigana,
+    onToggleFurigana,
+    showTranslation,
+    onToggleTranslation,
+    isDark,
+    onToggleTheme,
+  } = preferences;
   const {
     user,
     displayName,
@@ -180,6 +190,25 @@ export function AppHeader({
             </span>
             <span className="hidden sm:inline">
               Furigana: {showFurigana ? 'Aktif' : 'Mati'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            id="btnToggleTranslation"
+            onClick={onToggleTranslation}
+            aria-pressed={showTranslation}
+            aria-label={showTranslation ? 'Sembunyikan Terjemahan' : 'Tampilkan Terjemahan'}
+            title={showTranslation ? 'Sembunyikan Terjemahan' : 'Tampilkan Terjemahan'}
+            className={`min-h-[40px] px-2.5 sm:px-3 py-2 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 ${
+              showTranslation
+                ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/70'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Languages className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="hidden md:inline">
+              Terjemahan: {showTranslation ? 'Aktif' : 'Mati'}
             </span>
           </button>
 

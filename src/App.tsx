@@ -20,7 +20,12 @@ import { useToast } from './hooks/useToast';
 import type { AppTab, BookId, BunpouPattern, ChapterFilter } from './types/bunpou';
 import { createBookRecord } from './utils/bunpouSync';
 import { stopSpeaking } from './utils/speech';
-import { loadGlobalFuriganaPref, saveGlobalFuriganaPref } from './utils/storage';
+import {
+  loadGlobalFuriganaPref,
+  loadGlobalTranslationPref,
+  saveGlobalFuriganaPref,
+  saveGlobalTranslationPref,
+} from './utils/storage';
 
 const QuizPanel = lazy(() =>
   import('./components/QuizPanel').then(m => ({ default: m.QuizPanel }))
@@ -48,6 +53,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('card');
   const [activeChapter, setActiveChapter] = useState<ChapterFilter>('all');
   const [showFurigana, setShowFurigana] = useState<boolean>(() => loadGlobalFuriganaPref());
+  const [showTranslation, setShowTranslation] = useState<boolean>(() => loadGlobalTranslationPref());
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const { isDark, toggleTheme } = useTheme();
@@ -57,6 +63,14 @@ export default function App() {
     setShowFurigana(prev => {
       const next = !prev;
       saveGlobalFuriganaPref(next);
+      return next;
+    });
+  }, []);
+
+  const toggleTranslation = useCallback(() => {
+    setShowTranslation(prev => {
+      const next = !prev;
+      saveGlobalTranslationPref(next);
       return next;
     });
   }, []);
@@ -243,6 +257,8 @@ export default function App() {
         preferences={{
           showFurigana,
           onToggleFurigana: toggleFurigana,
+          showTranslation,
+          onToggleTranslation: toggleTranslation,
           isDark,
           onToggleTheme: toggleTheme,
         }}
@@ -326,6 +342,7 @@ export default function App() {
                 currentIndex={deck.cardIndex}
                 isFlipped={deck.isFlipped}
                 showFurigana={showFurigana}
+                showTranslation={showTranslation}
                 deckFilter={deck.deckFilter}
                 masteredSet={activeMastered}
                 hardSet={activeHardSet}
@@ -344,6 +361,7 @@ export default function App() {
               <BunpouListPanel
                 patterns={deck.scopedPatterns}
                 showFurigana={showFurigana}
+                showTranslation={showTranslation}
                 masteredSet={activeMastered}
                 hardSet={activeHardSet}
                 bookShortTitle={activeBook.shortTitle}
@@ -357,6 +375,7 @@ export default function App() {
                   book={activeBook}
                   allPatterns={dataset.allPatterns}
                   showFurigana={showFurigana}
+                  showTranslation={showTranslation}
                   history={cloudSync.quizHistories[activeBookId] ?? []}
                   historySyncing={cloudSync.quizHistorySyncing}
                   cloudEnabled={

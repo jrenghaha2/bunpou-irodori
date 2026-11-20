@@ -315,6 +315,7 @@ function buildClozeQuestion(
   const options = seededShuffle([cloze.answer, ...distractors], seed + 31);
   const correctIndex = options.indexOf(cloze.answer);
 
+  const basePrompt = 'Lengkapi bagian rumpang pada kalimat berikut sesuai konteks maknanya.';
   const hintText = cloze.translation
     ? `Arti: "${cloze.translation}"`
     : `Fungsi: ${pattern.functionText}`;
@@ -323,7 +324,8 @@ function buildClozeQuestion(
     id: `q-cloze-${pattern.id}-${seed}`,
     type: 'cloze',
     pattern,
-    prompt: `Lengkapi bagian rumpang pada kalimat berikut sesuai konteks maknanya. ${hintText}`,
+    prompt: `${basePrompt} ${hintText}`,
+    promptWithoutTranslation: basePrompt,
     japanesePrompt: cloze.blankedSentence,
     japaneseFull: cloze.fullSentence,
     options,

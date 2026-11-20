@@ -4,6 +4,7 @@ import { BOOK_STORAGE_KEYS } from './bunpouSync';
 
 export const OWNER_UID_KEY = 'irodori_bunpou_owner_uid_v1';
 export const FURIGANA_STORAGE_KEY = 'irodori_bunpou_furigana_v1';
+export const TRANSLATION_STORAGE_KEY = 'irodori_bunpou_translation_v1';
 export const BACKUP_APP_ID = 'irodori-bunpou';
 export const BACKUP_SCHEMA_VERSION = 1;
 
@@ -59,6 +60,31 @@ export function saveGlobalFuriganaPref(
   if (!storage) return;
   try {
     storage.setItem(FURIGANA_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {
+    // Non-fatal
+  }
+}
+
+export function loadGlobalTranslationPref(
+  storage: StorageLike | null = getDefaultStorage()
+): boolean {
+  if (!storage) return true;
+  try {
+    const raw = storage.getItem(TRANSLATION_STORAGE_KEY);
+    if (raw === '0' || raw === 'false') return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export function saveGlobalTranslationPref(
+  enabled: boolean,
+  storage: StorageLike | null = getDefaultStorage()
+): void {
+  if (!storage) return;
+  try {
+    storage.setItem(TRANSLATION_STORAGE_KEY, enabled ? '1' : '0');
   } catch {
     // Non-fatal
   }
