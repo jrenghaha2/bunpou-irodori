@@ -58,11 +58,11 @@ export function getFirestoreUpgradeUrl(): string {
   return `https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/firestore/databases/${FIRESTORE_DATABASE_ID}/data?openUpgradeDialog=true`;
 }
 
-export function handleFirestoreError(
+export function logFirestoreError(
   error: unknown,
   operationType: OperationType,
   path: string | null
-): never {
+): FirestoreErrorInfo {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -80,12 +80,20 @@ export function handleFirestoreError(
     operationType,
     path,
   };
-  const serialized = JSON.stringify(errInfo);
-  console.error('Firestore Error: ', serialized);
-  throw new Error(serialized);
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  return errInfo;
 }
 
-async function testConnection(): Promise<void> {
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+): never {
+  const errInfo = logFirestoreError(error, operationType, path);
+  throw new Error(JSON.stringify(errInfo));
+}
+
+export async function testConnection(): Promise<void> {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
@@ -94,5 +102,3 @@ async function testConnection(): Promise<void> {
     }
   }
 }
-
-void testConnection();

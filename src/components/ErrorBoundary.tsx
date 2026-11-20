@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { getFirestoreUpgradeUrl } from '../firebase';
+import { getFirestoreUpgradeUrl, isFirestoreQuotaError } from '../firebase';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -20,6 +20,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error('Application ErrorBoundary caught:', error, info);
   }
 
+  handleContinueOffline = () => {
+    this.setState({ error: null });
+  };
+
   render() {
     const { error } = this.state;
     if (!error) {
@@ -27,8 +31,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     const rawMsg = error.message || 'Terjadi kesalahan pada aplikasi.';
-    const isQuotaExceeded = rawMsg.includes('Quota exceeded');
-    const isFreeDailyReadLimit = rawMsg.includes('Free daily read units per project');
+    const isQuotaExceeded = isFirestoreQuotaError(error);
+    const isFreeDailyReadLimit =
+      rawMsg.includes('Free daily read units per project') || isQuotaExceeded;
 
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
@@ -40,12 +45,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
               {isQuotaExceeded
                 ? 'Batas Kuota Firestore Tercapai'
-                : 'Terjadi Gangguan Sinkronisasi'}
+                : 'Terjadi Gangguan Aplikasi'}
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               {isQuotaExceeded
-                ? 'Kuota harian gratis Firestore telah habis. Kuota akan direset keesokan hari.'
-                : 'Aplikasi mengalami kendala saat memproses data. Muat ulang halaman untuk melanjutkan belajar.'}
+                ? 'Kuota harian gratis Firestore telah habis. Anda tetap bisa belajar secara lokal tanpa koneksi cloud — seluruh 52 bab dan 264 pola tersimpan di perangkat ini.'
+                : 'Aplikasi mengalami kendala tak terduga. Anda dapat melanjutkan belajar di mode lokal atau memuat ulang halaman.'}
             </p>
           </div>
 
@@ -66,8 +71,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="button"
+              onClick={this.handleContinueOffline}
+              className="min-h-[42px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors cursor-pointer"
+            >
+              Lanjut Mode Offline
+            </button>
+            <button
+              type="button"
               onClick={() => window.location.reload()}
-              className="min-h-[42px] px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors cursor-pointer"
+              className="min-h-[42px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold transition-colors cursor-pointer"
             >
               Muat Ulang Halaman
             </button>

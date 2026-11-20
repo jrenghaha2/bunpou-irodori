@@ -32,7 +32,7 @@ export function QuizSetupView({
   onSelectCount,
   onStartQuiz,
 }: QuizSetupViewProps) {
-  const allBookChapters = book.chapters.map(c => c.chapterNumber as ChapterNumber);
+  const allBookChapters = book.chapters.map(c => c.chapterNumber);
   const firstCh = allBookChapters[0] ?? 1;
   const lastCh = allBookChapters[allBookChapters.length - 1] ?? 18;
   const selectedSet = new Set(selectedChapters);
@@ -95,7 +95,7 @@ export function QuizSetupView({
 
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {book.chapters.map(ch => {
-            const num = ch.chapterNumber as ChapterNumber;
+            const num = ch.chapterNumber;
             const active = selectedSet.has(num);
             return (
               <button

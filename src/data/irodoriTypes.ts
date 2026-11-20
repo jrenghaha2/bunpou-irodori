@@ -1,4 +1,4 @@
-import type { BookData, BookId, BunpouPattern, ChapterData } from '../types/bunpou';
+import type { BookData, BookId, BunpouPattern, ChapterData, ChapterNumber } from '../types/bunpou';
 import { stripFuriganaMarkup } from '../utils/furiganaConverter';
 
 export interface RawExample {
@@ -19,7 +19,7 @@ export interface RawPattern {
 }
 
 export interface RawChapter {
-  chapterNumber: number;
+  chapterNumber: ChapterNumber;
   topicJp: string;
   topicId: string;
   titleJp: string;

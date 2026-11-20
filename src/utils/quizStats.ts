@@ -8,10 +8,10 @@ import type {
   QuizRecord,
   QuizSessionHistoryEntry,
 } from '../types/bunpou';
-import { CHAPTER_NUMBERS } from '../types/bunpou';
+import { BOOK_CHAPTER_RANGES } from '../types/bunpou';
 import { BOOK_STORAGE_KEYS } from './bunpouSync';
 import { calculateQuizScore, formatChapterSelectionLabel } from './quizGenerator';
-import type { StorageLike } from './storage';
+import { getDefaultStorage, type StorageLike } from './storage';
 
 export const MAX_QUIZ_HISTORY_ENTRIES = 15;
 
@@ -26,17 +26,6 @@ const CODE_TO_TYPE: Record<string, QuizQuestionType> = {
   '1': 'formula',
   '2': 'function',
 };
-
-function getDefaultStorage(): StorageLike | null {
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
 
 export interface QuizPerformanceStats {
   totalSessions: number;
@@ -209,17 +198,20 @@ export function encodeQuizSessionToken(entry: QuizSessionHistoryEntry): string {
     ? new Date().toISOString()
     : isoDate.toISOString();
 
+  const range = BOOK_CHAPTER_RANGES[entry.bookId];
+  const validChapters = entry.chapters
+    ? [...new Set(entry.chapters)]
+        .filter(ch => ch >= range.min && ch <= range.max)
+        .sort((a, b) => a - b)
+    : [];
   const sortedChapters =
-    entry.chapters && entry.chapters.length > 0 && entry.chapters.length < CHAPTER_NUMBERS.length
-      ? [...new Set(entry.chapters)]
-          .filter(ch => ch >= 1 && ch <= 18)
-          .sort((a, b) => a - b)
-      : null;
+    validChapters.length > 0 && validChapters.length < range.count ? validChapters : null;
 
   const scopeCode = sortedChapters ? sortedChapters.join('.') : 'all';
 
+  const bookPatternRegex = new RegExp(`^${entry.bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?$`);
   const answersPacked = (entry.answers ?? [])
-    .filter(a => /^(introductory|elementary1|elementary2)-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/.test(a.patternId))
+    .filter(a => bookPatternRegex.test(a.patternId))
     .slice(0, 120)
     .map(a => `${a.no}:${TYPE_TO_CODE[a.type] ?? '0'}:${a.patternId}:${a.correct ? '1' : '0'}`)
     .join(';');
@@ -257,16 +249,17 @@ export function decodeQuizSessionToken(
     return null;
   }
 
+  const range = BOOK_CHAPTER_RANGES[bookId];
   let chapters: ChapterNumber[] | undefined;
-  let scopeLabel = 'Semua Bab (1–18)';
+  let scopeLabel = `Semua Bab (${range.min}–${range.max})`;
   if (scopeCode !== 'all' && scopeCode.length > 0) {
     const parsedCh = scopeCode
       .split('.')
       .map(Number)
-      .filter((n): n is ChapterNumber => Number.isInteger(n) && n >= 1 && n <= 18);
+      .filter((n): n is ChapterNumber => Number.isInteger(n) && n >= range.min && n <= range.max);
     if (parsedCh.length > 0) {
       chapters = parsedCh;
-      scopeLabel = formatChapterSelectionLabel(parsedCh, CHAPTER_NUMBERS.length);
+      scopeLabel = formatChapterSelectionLabel(parsedCh, range.count);
     }
   }
 

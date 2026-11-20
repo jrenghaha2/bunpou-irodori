@@ -9,8 +9,12 @@ const rulesText = fs.readFileSync(RULES_PATH, 'utf8');
 const INTRO_ITEM_RE = /^introductory-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/;
 const ELEM1_ITEM_RE = /^elementary1-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/;
 const ELEM2_ITEM_RE = /^elementary2-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/;
-const QUIZ_TOKEN_RE =
-  /^[a-zA-Z0-9_\-]+\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?Z\|(mixed|cloze|formula|function)\|[0-9]{1,3}\|[1-9][0-9]{0,2}\|(100|[0-9]{1,2})\|(all|([1-9]|1[0-8])(\.([1-9]|1[0-8]))*)\|(|[1-9][0-9]{0,2}:[0-2]:(introductory|elementary1|elementary2)-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01](;[1-9][0-9]{0,2}:[0-2]:(introductory|elementary1|elementary2)-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01])*)$/;
+
+function buildQuizTokenRegex(bookId: string): RegExp {
+  return new RegExp(
+    `^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|([1-9]|1[0-8])(\\.([1-9]|1[0-8]))*)\\|(|[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01](;[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01])*)$`
+  );
+}
 
 interface MockAuth {
   uid: string;
@@ -40,23 +44,17 @@ function validateList(arr: unknown, bookId: string): boolean {
   return re.test(arr[0]) && commaRe.test(joinedComma) && pipeRe.test(joinedPipe);
 }
 
-function validateSessions(arr: unknown): boolean {
+function validateSessions(arr: unknown, bookId: string): boolean {
+  if (!['introductory', 'elementary1', 'elementary2'].includes(bookId)) return false;
   if (!Array.isArray(arr) || arr.length > 15) return false;
   if (new Set(arr).size !== arr.length) return false;
-  if (arr.length === 0) return true;
-  if (!arr.every(v => typeof v === 'string')) return false;
-  const joinedComma = arr.join(',');
-  const joinedTilde = arr.join('~');
-  if (joinedComma.length > 120000) return false;
-  const src = QUIZ_TOKEN_RE.source.slice(1, -1);
-  const commaRe = new RegExp(`^${src}(,${src})*$`);
-  const tildeRe = new RegExp(`^${src}(~${src})*$`);
-  return (
-    arr[0].length >= 24 &&
-    arr[0].length <= 8000 &&
-    QUIZ_TOKEN_RE.test(arr[0]) &&
-    commaRe.test(joinedComma) &&
-    tildeRe.test(joinedTilde)
+  const tokenRe = buildQuizTokenRegex(bookId);
+  return arr.every(
+    item =>
+      typeof item === 'string' &&
+      item.length >= 24 &&
+      item.length <= 8000 &&
+      tokenRe.test(item)
   );
 }
 
@@ -86,15 +84,20 @@ function canWriteProgress(
   return parentExists;
 }
 
-test('firestore.rules structural security invariants (Eight Pillars)', () => {
+test('firestore.rules structural security invariants (Eight Pillars + Hardening)', () => {
   assert.match(rulesText, /rules_version = '2';/);
   assert.match(rulesText, /match \/\{document=\*\*\} \{\s*allow read, write: if false;\s*\}/);
   assert.match(rulesText, /request\.auth\.token\.email_verified == true/);
   assert.match(rulesText, /allow list: if false;/);
+  assert.match(rulesText, /allow delete: if false;/);
   assert.match(rulesText, /exists\(\/databases\/\$\(database\)\/documents\/users\/\$\(userId\)\)/);
   assert.match(rulesText, /incoming\(\)\.createdAt == request\.time/);
   assert.match(rulesText, /incoming\(\)\.updatedAt == request\.time/);
   assert.match(rulesText, /incoming\(\)\.diff\(existing\(\)\)\.affectedKeys\(\)\.hasOnly/);
+  assert.match(rulesText, /isValidIntroductoryQuizToken/);
+  assert.match(rulesText, /isValidElementary1QuizToken/);
+  assert.match(rulesText, /isValidElementary2QuizToken/);
+  assert.match(rulesText, /isValidQuizSessionToken\(arr\[14\], bookId\)/);
   assert.match(rulesText, /match \/bunpouProgress\/\{bookId\}/);
   assert.match(rulesText, /match \/quizHistory\/\{bookId\}/);
 });
@@ -104,8 +107,8 @@ test('Dirty Dozen adversarial payloads return PERMISSION_DENIED', () => {
   const baseValid: Record<string, unknown> = {
     uid: 'userA',
     bookId: 'introductory',
-    mastered: ['introductory-bab-1-p1', 'introductory-bab-2-p3'],
-    hard: ['introductory-bab-3-p1'],
+    mastered: ['introductory-bab-3-p1', 'introductory-bab-4-p3'],
+    hard: ['introductory-bab-5-p1'],
     createdAt: 'SERVER_TIME',
     updatedAt: 'SERVER_TIME',
   };
@@ -159,21 +162,21 @@ test('Dirty Dozen adversarial payloads return PERMISSION_DENIED', () => {
   assert.equal(
     canWriteProgress(validAuth, 'userA', 'introductory', true, {
       ...baseValid,
-      mastered: ['introductory-bab-1-p1', '<script>alert(1)</script>'],
+      mastered: ['introductory-bab-3-p1', '<script>alert(1)</script>'],
     }),
     false
   );
   assert.equal(
     canWriteProgress(validAuth, 'userA', 'introductory', true, {
       ...baseValid,
-      mastered: ['introductory-bab-1-p1', 'introductory-bab-1-p2,introductory-bab-1-p3'],
+      mastered: ['introductory-bab-3-p1', 'introductory-bab-3-p2,introductory-bab-3-p3'],
     }),
     false
   );
   assert.equal(
     canWriteProgress(validAuth, 'userA', 'introductory', true, {
       ...baseValid,
-      mastered: ['introductory-bab-1-p1', 'introductory-bab-1-p2|introductory-bab-1-p3'],
+      mastered: ['introductory-bab-3-p1', 'introductory-bab-3-p2|introductory-bab-3-p3'],
     }),
     false
   );
@@ -198,33 +201,45 @@ test('Dirty Dozen adversarial payloads return PERMISSION_DENIED', () => {
   assert.equal(
     canWriteProgress(validAuth, 'userA', 'introductory', true, {
       ...baseValid,
-      mastered: ['introductory-bab-1-p1', 'introductory-bab-1-p1'],
+      mastered: ['introductory-bab-3-p1', 'introductory-bab-3-p1'],
     }),
     false
   );
   assert.equal(
     canWriteProgress(validAuth, 'userA', 'introductory', true, {
       ...baseValid,
-      mastered: ['introductory-bab-1-p1'],
-      hard: ['introductory-bab-1-p1'],
+      mastered: ['introductory-bab-3-p1'],
+      hard: ['introductory-bab-3-p1'],
     }),
     false
   );
 
-  // 11. Quiz history token validation & separator smuggling
-  const validToken =
-    'q1700000000_ab12|2026-11-19T04:00:00.000Z|mixed|8|10|80|1.2.3|1:0:introductory-bab-1-p1:1;2:1:introductory-bab-2-p1:0';
-  assert.equal(validateSessions([validToken]), true);
-  assert.equal(validateSessions([validToken, `${validToken},${validToken}`]), false);
-  assert.equal(validateSessions([validToken, `${validToken}~${validToken}`]), false);
+  // 11. Quiz history token validation, per-book prefix enforcement, & separator smuggling
+  const validIntroToken =
+    'q1700000000_ab12|2026-11-19T04:00:00.000Z|mixed|8|10|80|3.4.5|1:0:introductory-bab-3-p1:1;2:1:introductory-bab-4-p1:0';
+  assert.equal(validateSessions([validIntroToken], 'introductory'), true);
+  // Cross-book prefix inside quizHistory must fail
+  assert.equal(validateSessions([validIntroToken], 'elementary1'), false);
   assert.equal(
-    validateSessions([
-      'q1|2026-11-19T04:00:00.000Z|mixed|8|10|105|all|1:0:introductory-bab-1-p1:1',
-    ]),
+    validateSessions([validIntroToken, `${validIntroToken},${validIntroToken}`], 'introductory'),
     false
   );
   assert.equal(
-    validateSessions(Array.from({ length: 16 }, (_, i) => `q${i}|2026-11-19T04:00:00.000Z|mixed|1|1|100|all|`)),
+    validateSessions([validIntroToken, `${validIntroToken}~${validIntroToken}`], 'introductory'),
+    false
+  );
+  assert.equal(
+    validateSessions(
+      ['q1|2026-11-19T04:00:00.000Z|mixed|8|10|105|all|1:0:introductory-bab-3-p1:1'],
+      'introductory'
+    ),
+    false
+  );
+  assert.equal(
+    validateSessions(
+      Array.from({ length: 16 }, (_, i) => `q${i}|2026-11-19T04:00:00.000Z|mixed|1|1|100|all|`),
+      'introductory'
+    ),
     false
   );
 

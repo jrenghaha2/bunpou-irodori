@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { PendingRestoreState } from '../components/RestoreModal';
-import type { BookId } from '../types/bunpou';
+import type { BookId, PendingRestoreState } from '../types/bunpou';
 import { BOOK_STORAGE_KEYS, normalizeDisjointSets } from '../utils/bunpouSync';
 import { buildBackupPayload, validateAndParseBackup } from '../utils/storage';
 import type { ShowToastFn } from './useToast';
@@ -76,7 +75,7 @@ export function useBackupRestore({
       reader.onload = () => {
         try {
           const text = typeof reader.result === 'string' ? reader.result : '';
-          const parsed = validateAndParseBackup(text, activeValidIds);
+          const parsed = validateAndParseBackup(text, activeValidIds, bookId);
           dismissToast();
           setPendingRestore({ parsed, fileName: file.name });
         } catch (err) {
@@ -92,7 +91,7 @@ export function useBackupRestore({
       };
       reader.readAsText(file);
     },
-    [activeValidIds, dismissToast, showToast]
+    [activeValidIds, bookId, dismissToast, showToast]
   );
 
   const handleCloseRestoreModal = useCallback(() => {

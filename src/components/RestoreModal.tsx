@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, FolderInput, Info, Merge, RefreshCw } from 'lucide-react';
-import type { BackupParseResult } from '../types/bunpou';
-
-export interface PendingRestoreState {
-  parsed: BackupParseResult;
-  fileName: string;
-}
+import type { PendingRestoreState } from '../types/bunpou';
+import { Modal } from './Modal';
 
 interface RestoreModalProps {
   pending: PendingRestoreState | null;
@@ -28,62 +24,12 @@ export function RestoreModal({
   onConfirm,
   onClose,
 }: RestoreModalProps) {
-  const modalBoxRef = useRef<HTMLDivElement>(null);
   const mergeBtnRef = useRef<HTMLButtonElement>(null);
   const [confirmEmptyReplace, setConfirmEmptyReplace] = useState(false);
 
   useEffect(() => {
     setConfirmEmptyReplace(false);
   }, [pending]);
-
-  useEffect(() => {
-    if (!pending) return;
-
-    const focusTimer = requestAnimationFrame(() => {
-      mergeBtnRef.current?.focus();
-    });
-
-    const getFocusables = (): HTMLElement[] => {
-      const box = modalBoxRef.current;
-      if (!box) return [];
-      return Array.from(
-        box.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-        return;
-      }
-
-      const focusables = getFocusables();
-      if (!focusables.length) return;
-      const active = document.activeElement as HTMLElement | null;
-      const idx = active ? focusables.indexOf(active) : -1;
-
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        if (e.shiftKey) {
-          const prevIdx = idx <= 0 ? focusables.length - 1 : idx - 1;
-          focusables[prevIdx]?.focus();
-        } else {
-          const nextIdx = idx === -1 || idx >= focusables.length - 1 ? 0 : idx + 1;
-          focusables[nextIdx]?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => {
-      cancelAnimationFrame(focusTimer);
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [pending, onClose]);
 
   if (!pending) return null;
 
@@ -107,21 +53,15 @@ export function RestoreModal({
   };
 
   return (
-    <div
+    <Modal
+      open={Boolean(pending)}
+      onClose={onClose}
       id="restoreModal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="restoreModalTitle"
-      aria-describedby="restoreModalDesc"
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-50 bg-slate-900/55 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4"
+      ariaLabelledBy="restoreModalTitle"
+      ariaDescribedBy="restoreModalDesc"
+      initialFocusRef={mergeBtnRef}
+      panelClassName="p-6 text-slate-900 dark:text-slate-100"
     >
-      <div
-        ref={modalBoxRef}
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
-      >
         <div className="flex items-center gap-2.5">
           <FolderInput
             className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0"
@@ -295,7 +235,6 @@ export function RestoreModal({
             Batal
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

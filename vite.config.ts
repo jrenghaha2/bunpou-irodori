@@ -29,6 +29,21 @@ export default defineConfig(() => {
         },
       },
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'firebase-vendor';
+            }
+            if (id.includes('/src/data/irodori')) {
+              return 'irodori-data';
+            }
+            return undefined;
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

@@ -1,4 +1,5 @@
 import type { BookId } from '../types/bunpou';
+import { BOOK_ORDER } from '../types/bunpou';
 
 export const DISPLAY_NAME_MAX_LENGTH = 60;
 export const AVATAR_URL_MAX_LENGTH = 20000;
@@ -30,30 +31,12 @@ export const BOOK_STORAGE_KEYS: Record<
   },
 };
 
-export const CHAPTER_DOT_COLORS: readonly string[] = [
-  '#0d9488',
-  '#4f46e5',
-  '#0284c7',
-  '#059669',
-  '#d97706',
-  '#e11d48',
-  '#7c3aed',
-  '#2563eb',
-  '#16a34a',
-  '#ea580c',
-  '#9333ea',
-  '#0891b2',
-  '#db2777',
-  '#65a30d',
-  '#ca8a04',
-  '#dc2626',
-  '#4338ca',
-  '#0f766e',
-];
-
-export function getChapterDotColor(chapterNumber: number): string {
-  const idx = Math.max(0, chapterNumber - 1) % CHAPTER_DOT_COLORS.length;
-  return CHAPTER_DOT_COLORS[idx];
+export function createBookRecord<T>(factory: (bookId: BookId) => T): Record<BookId, T> {
+  const out = {} as Record<BookId, T>;
+  for (const bookId of BOOK_ORDER) {
+    out[bookId] = factory(bookId);
+  }
+  return out;
 }
 
 export function sanitizeDisplayName(input: string): string {
@@ -97,31 +80,6 @@ export function normalizeDisjointSets(
   }
 
   return { mastered: nextMastered, hard: nextHard };
-}
-
-export function markPatternMastered(
-  mastered: Set<string>,
-  hard: Set<string>,
-  patternId: string
-): { nextMastered: Set<string>; nextHard: Set<string>; isNewMastered: boolean } {
-  const nextMastered = new Set(mastered);
-  const nextHard = new Set(hard);
-  const isNewMastered = !nextMastered.has(patternId);
-  nextMastered.add(patternId);
-  nextHard.delete(patternId);
-  return { nextMastered, nextHard, isNewMastered };
-}
-
-export function markPatternHard(
-  mastered: Set<string>,
-  hard: Set<string>,
-  patternId: string
-): { nextMastered: Set<string>; nextHard: Set<string> } {
-  const nextMastered = new Set(mastered);
-  const nextHard = new Set(hard);
-  nextHard.add(patternId);
-  nextMastered.delete(patternId);
-  return { nextMastered, nextHard };
 }
 
 export function mergeProgressSets(

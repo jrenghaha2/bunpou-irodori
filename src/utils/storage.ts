@@ -13,7 +13,7 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
-function getDefaultStorage(): StorageLike | null {
+export function getDefaultStorage(): StorageLike | null {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       return window.localStorage;
@@ -45,7 +45,7 @@ export function loadGlobalFuriganaPref(storage: StorageLike | null = getDefaultS
   if (!storage) return true;
   try {
     const raw = storage.getItem(FURIGANA_STORAGE_KEY);
-    if (raw === '0') return false;
+    if (raw === '0' || raw === 'false') return false;
     return true;
   } catch {
     return true;
@@ -169,7 +169,8 @@ const ALLOWED_LEGACY_PLAIN_KEYS = new Set(['mastered', 'hard', 'exportedAt']);
 
 export function validateAndParseBackup(
   rawText: string,
-  validIds: Set<string>
+  validIds: Set<string>,
+  expectedBookId?: BookId
 ): BackupParseResult {
   let data: unknown;
   try {
@@ -216,13 +217,16 @@ export function validateAndParseBackup(
     }
     if (
       obj.bookId !== undefined &&
-      obj.bookId !== 'introductory' &&
-      obj.bookId !== 'elementary1' &&
-      obj.bookId !== 'elementary2'
+      !BOOK_ORDER.includes(obj.bookId as BookId)
     ) {
       throw new Error(`Identitas buku pada backup tidak dikenali ("${String(obj.bookId)}").`);
     }
     parsedBookId = obj.bookId as BookId | undefined;
+    if (parsedBookId && expectedBookId && parsedBookId !== expectedBookId) {
+      throw new Error(
+        `File backup ini untuk buku ${BOOK_STORAGE_KEYS[parsedBookId].shortLabel}, sedangkan buku aktif saat ini ${BOOK_STORAGE_KEYS[expectedBookId].shortLabel}. Pindah ke buku ${BOOK_STORAGE_KEYS[parsedBookId].shortLabel} terlebih dahulu.`
+      );
+    }
     for (const k of keys) {
       if (!ALLOWED_V1_KEYS.has(k)) {
         throw new Error(`Field tidak dikenali dalam file backup: "${k}".`);

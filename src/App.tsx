@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AbbreviationsView } from './components/AbbreviationsView';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { AuthModal } from './components/AuthModal';
 import { BunpouListPanel } from './components/BunpouListPanel';
 import { FlashcardPanel, type DeckStatusFilter } from './components/FlashcardPanel';
 import { IrodoriBookMenu } from './components/IrodoriBookMenu';
+import { Modal } from './components/Modal';
 import { ProfileModal } from './components/ProfileModal';
-import { QuizPanel } from './components/QuizPanel';
 import { RestoreModal } from './components/RestoreModal';
 import { Sidebar } from './components/Sidebar';
 import { ToastBanner } from './components/ToastBanner';
 import { IRODORI_DATASET } from './data/irodoriDataset';
+import { getFirestoreUpgradeUrl } from './firebase';
 import { useAuthActions } from './hooks/useAuthActions';
 import { useBackupRestore } from './hooks/useBackupRestore';
 import { useCloudProgressSync } from './hooks/useCloudProgressSync';
@@ -22,18 +22,28 @@ import type {
   BunpouPattern,
   ChapterFilter,
 } from './types/bunpou';
+import { createBookRecord } from './utils/bunpouSync';
 import { shuffled } from './utils/quizGenerator';
+import { stopSpeaking } from './utils/speech';
+import { loadGlobalFuriganaPref, saveGlobalFuriganaPref } from './utils/storage';
 
-const FURIGANA_STORAGE_KEY = 'irodori_bunpou_furigana_v1';
+const QuizPanel = lazy(() =>
+  import('./components/QuizPanel').then(m => ({ default: m.QuizPanel }))
+);
+const AbbreviationsView = lazy(() =>
+  import('./components/AbbreviationsView').then(m => ({ default: m.AbbreviationsView }))
+);
 
-function loadInitialFurigana(): boolean {
-  try {
-    const saved = window.localStorage.getItem(FURIGANA_STORAGE_KEY);
-    if (saved === '0' || saved === 'false') return false;
-    return true;
-  } catch {
-    return true;
-  }
+function LazyTabFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Memuat tampilan"
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center text-sm text-slate-500 dark:text-slate-400 shadow-sm"
+    >
+      Memuat modul belajar...
+    </div>
+  );
 }
 
 export default function App() {
@@ -42,7 +52,7 @@ export default function App() {
   const [activeBookId, setActiveBookId] = useState<BookId>('introductory');
   const [activeTab, setActiveTab] = useState<AppTab>('card');
   const [activeChapter, setActiveChapter] = useState<ChapterFilter>('all');
-  const [showFurigana, setShowFurigana] = useState<boolean>(loadInitialFurigana);
+  const [showFurigana, setShowFurigana] = useState<boolean>(() => loadGlobalFuriganaPref());
 
   // Flashcard state
   const [deckFilter, setDeckFilter] = useState<DeckStatusFilter>('all');
@@ -57,35 +67,23 @@ export default function App() {
   const toggleFurigana = useCallback(() => {
     setShowFurigana(prev => {
       const next = !prev;
-      try {
-        window.localStorage.setItem(FURIGANA_STORAGE_KEY, next ? '1' : '0');
-      } catch {
-        // Ignore storage errors
-      }
+      saveGlobalFuriganaPref(next);
       return next;
     });
   }, []);
 
   const validIdsByBook = useMemo<Record<BookId, Set<string>>>(() => {
-    const map: Record<BookId, Set<string>> = {
-      introductory: new Set(),
-      elementary1: new Set(),
-      elementary2: new Set(),
-    };
-    if (dataset) {
-      for (const p of dataset.allPatterns) {
-        map[p.bookId].add(p.id);
-      }
+    const map = createBookRecord(() => new Set<string>());
+    for (const p of dataset.allPatterns) {
+      map[p.bookId].add(p.id);
     }
     return map;
   }, [dataset]);
 
   const patternById = useMemo<Map<string, BunpouPattern>>(() => {
     const map = new Map<string, BunpouPattern>();
-    if (dataset) {
-      for (const p of dataset.allPatterns) {
-        map.set(p.id, p);
-      }
+    for (const p of dataset.allPatterns) {
+      map.set(p.id, p);
     }
     return map;
   }, [dataset]);
@@ -101,14 +99,9 @@ export default function App() {
     activeBookId,
     validIdsByBook,
     patternById,
-    datasetReady: Boolean(dataset),
-    bumpAuthVersion: authActions.bumpAuthVersion,
+    datasetReady: true,
     showToast,
   });
-
-  if (cloudSync.fatalError) {
-    throw cloudSync.fatalError;
-  }
 
   const activeBook = useMemo(() => {
     return dataset.books.find(b => b.id === activeBookId) ?? dataset.books[0];
@@ -135,7 +128,6 @@ export default function App() {
 
   // Patterns in active book & selected chapter
   const scopedPatterns = useMemo<BunpouPattern[]>(() => {
-    if (!activeBook) return [];
     if (activeChapter === 'all') {
       return activeBook.chapters.flatMap(ch => ch.patterns);
     }
@@ -161,7 +153,13 @@ export default function App() {
     }
   }, [cardIndex, flashcardDeck.length]);
 
+  // Stop any playing TTS utterance when changing book, tab, chapter, or card
+  useEffect(() => {
+    stopSpeaking();
+  }, [activeBookId, activeTab, activeChapter, cardIndex]);
+
   const handleSelectBook = useCallback((nextBookId: BookId) => {
+    stopSpeaking();
     setActiveBookId(nextBookId);
     setActiveChapter('all');
     setDeckFilter('all');
@@ -171,10 +169,16 @@ export default function App() {
   }, []);
 
   const handleSelectChapter = useCallback((nextChapter: ChapterFilter) => {
+    stopSpeaking();
     setActiveChapter(nextChapter);
     setCardIndex(0);
     setIsFlipped(false);
     setShuffleOrder(null);
+  }, []);
+
+  const handleSelectTab = useCallback((nextTab: AppTab) => {
+    stopSpeaking();
+    setActiveTab(nextTab);
   }, []);
 
   const handleToggleMastered = useCallback(
@@ -209,18 +213,21 @@ export default function App() {
 
   const handlePrevCard = useCallback(() => {
     if (flashcardDeck.length < 2) return;
+    stopSpeaking();
     setIsFlipped(false);
     setCardIndex(prev => (prev - 1 + flashcardDeck.length) % flashcardDeck.length);
   }, [flashcardDeck.length]);
 
   const handleNextCard = useCallback(() => {
     if (flashcardDeck.length < 2) return;
+    stopSpeaking();
     setIsFlipped(false);
     setCardIndex(prev => (prev + 1) % flashcardDeck.length);
   }, [flashcardDeck.length]);
 
   const handleShuffleDeck = useCallback(() => {
     if (flashcardDeck.length < 2) return;
+    stopSpeaking();
     const ids = shuffled(flashcardDeck.map(p => p.id));
     setShuffleOrder(ids);
     setCardIndex(0);
@@ -237,9 +244,9 @@ export default function App() {
     showToast(
       'info',
       'Progres Buku Direset',
-      `Status hafal & sulit untuk ${activeBook?.shortTitle ?? 'buku ini'} telah dikosongkan.`
+      `Status hafal & sulit untuk ${activeBook.shortTitle} telah dikosongkan.`
     );
-  }, [activeBook?.shortTitle, activeBookId, cloudSync, showToast]);
+  }, [activeBook.shortTitle, activeBookId, cloudSync, showToast]);
 
   const handleSignOut = useCallback(() => {
     void authActions.executeSignOut(() => {
@@ -312,7 +319,6 @@ export default function App() {
   ]);
 
   const chapterLabel = useMemo(() => {
-    if (!activeBook) return 'Semua Bab';
     if (activeChapter === 'all') {
       const firstCh = activeBook.chapters[0]?.chapterNumber ?? 1;
       const lastCh = activeBook.chapters[activeBook.chapters.length - 1]?.chapterNumber ?? 18;
@@ -369,6 +375,37 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5">
+        {cloudSync.fatalError ? (
+          <div
+            role="alert"
+            className="rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div className="space-y-1 text-xs sm:text-sm text-amber-950 dark:text-amber-100">
+              <p className="font-bold">Batas Kuota Harian Firestore Tercapai</p>
+              <p className="text-amber-800 dark:text-amber-200 leading-relaxed">
+                Sinkronisasi cloud dijeda sementara hingga kuota direset. Seluruh materi dan
+                progres tetap aman di penyimpanan lokal perangkat ini.{' '}
+                <a
+                  href={getFirestoreUpgradeUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-semibold"
+                >
+                  Kelola kuota Firebase
+                </a>
+                .
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={cloudSync.enableOfflineFallback}
+              className="min-h-[38px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-bold shrink-0 cursor-pointer"
+            >
+              Lanjut Mode Offline
+            </button>
+          </div>
+        ) : null}
+
         <IrodoriBookMenu
           books={dataset.books}
           activeBookId={activeBookId}
@@ -383,7 +420,7 @@ export default function App() {
             book={activeBook}
             masteredSet={activeMastered}
             hardSet={activeHardSet}
-            onSelectTab={setActiveTab}
+            onSelectTab={handleSelectTab}
             onSelectChapter={handleSelectChapter}
           />
 
@@ -400,6 +437,7 @@ export default function App() {
                 bookShortTitle={activeBook.shortTitle}
                 chapterLabel={chapterLabel}
                 onChangeDeckFilter={next => {
+                  stopSpeaking();
                   setDeckFilter(next);
                   setCardIndex(0);
                   setIsFlipped(false);
@@ -424,22 +462,28 @@ export default function App() {
                 onToggleHard={handleToggleHard}
               />
             ) : activeTab === 'quiz' ? (
-              <QuizPanel
-                book={activeBook}
-                allPatterns={dataset.allPatterns}
-                showFurigana={showFurigana}
-                history={cloudSync.quizHistories[activeBookId] ?? []}
-                historySyncing={cloudSync.quizHistorySyncing}
-                cloudEnabled={Boolean(authActions.user?.emailVerified)}
-                onRecordQuizSession={cloudSync.handleRecordQuizSession}
-                onClearQuizHistory={() => cloudSync.handleClearQuizHistory(activeBookId)}
-              />
+              <Suspense fallback={<LazyTabFallback />}>
+                <QuizPanel
+                  book={activeBook}
+                  allPatterns={dataset.allPatterns}
+                  showFurigana={showFurigana}
+                  history={cloudSync.quizHistories[activeBookId] ?? []}
+                  historySyncing={cloudSync.quizHistorySyncing}
+                  cloudEnabled={
+                    Boolean(authActions.user?.emailVerified) && !cloudSync.offlineFallback
+                  }
+                  onRecordQuizSession={cloudSync.handleRecordQuizSession}
+                  onClearQuizHistory={() => cloudSync.handleClearQuizHistory(activeBookId)}
+                />
+              </Suspense>
             ) : (
-              <AbbreviationsView
-                abbreviations={dataset.abbreviations}
-                books={dataset.books}
-                booksProgress={cloudSync.booksProgress}
-              />
+              <Suspense fallback={<LazyTabFallback />}>
+                <AbbreviationsView
+                  abbreviations={dataset.abbreviations}
+                  books={dataset.books}
+                  booksProgress={cloudSync.booksProgress}
+                />
+              </Suspense>
             )}
           </div>
         </div>
@@ -451,49 +495,42 @@ export default function App() {
       </footer>
 
       {/* Reset Book Progress Confirmation Modal */}
-      {resetConfirmOpen ? (
-        <div
-          id="resetConfirmModal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="resetConfirmTitle"
-          onClick={e => {
-            if (e.target === e.currentTarget) setResetConfirmOpen(false);
-          }}
-          className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+      <Modal
+        open={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        id="resetConfirmModal"
+        ariaLabelledBy="resetConfirmTitle"
+        panelClassName="p-6 space-y-4"
+      >
+        <h2
+          id="resetConfirmTitle"
+          className="text-lg font-bold text-slate-900 dark:text-slate-50"
         >
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h2
-              id="resetConfirmTitle"
-              className="text-lg font-bold text-slate-900 dark:text-slate-50"
-            >
-              Reset Progres {activeBook.shortTitle}?
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Semua tanda <strong>Sudah Hafal ({activeMastered.size})</strong> dan{' '}
-              <strong>Sulit ({activeHardSet.size})</strong> untuk buku{' '}
-              <strong>{activeBook.shortTitle}</strong> akan dikosongkan. Progres buku lainnya tidak
-              terpengaruh.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setResetConfirmOpen(false)}
-                className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmResetBook}
-                className="min-h-[40px] px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold cursor-pointer"
-              >
-                Ya, Reset Progres
-              </button>
-            </div>
-          </div>
+          Reset Progres {activeBook.shortTitle}?
+        </h2>
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+          Semua tanda <strong>Sudah Hafal ({activeMastered.size})</strong> dan{' '}
+          <strong>Sulit ({activeHardSet.size})</strong> untuk buku{' '}
+          <strong>{activeBook.shortTitle}</strong> akan dikosongkan. Progres buku lainnya tidak
+          terpengaruh.
+        </p>
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setResetConfirmOpen(false)}
+            className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmResetBook}
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold cursor-pointer"
+          >
+            Ya, Reset Progres
+          </button>
         </div>
-      ) : null}
+      </Modal>
 
       <AuthModal
         open={authActions.authModalOpen}

@@ -6,8 +6,8 @@ export interface SpeechResult {
 }
 
 let cachedVoices: SpeechSynthesisVoice[] = [];
-let fallbackAudio: HTMLAudioElement | null = null;
 let activeUtterance: SpeechSynthesisUtterance | null = null;
+let pendingTimerId: ReturnType<typeof setTimeout> | null = null;
 
 function loadVoices(): void {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -22,33 +22,19 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   }
 }
 
-function playOnlineTTSFallback(
-  text: string,
-  callbacks?: { onStart?: () => void; onEnd?: () => void }
-): void {
-  try {
-    if (fallbackAudio) {
-      fallbackAudio.pause();
-      fallbackAudio = null;
-    }
-    fallbackAudio = new Audio(
-      `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ja&dt=t&q=${encodeURIComponent(text)}`
-    );
-    fallbackAudio.playbackRate = 0.94;
-    fallbackAudio.onplay = () => callbacks?.onStart?.();
-    fallbackAudio.onended = () => callbacks?.onEnd?.();
-    fallbackAudio.onerror = () => callbacks?.onEnd?.();
-    fallbackAudio.play().catch(() => {
-      callbacks?.onEnd?.();
-    });
-  } catch {
-    callbacks?.onEnd?.();
+export function stopSpeaking(): void {
+  if (pendingTimerId !== null) {
+    clearTimeout(pendingTimerId);
+    pendingTimerId = null;
+  }
+  activeUtterance = null;
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
   }
 }
 
 /**
- * Speaks Japanese text aloud using Web Speech API (ja-JP) with automatic online TTS fallback
- * when no Japanese voice is available in the browser.
+ * Speaks Japanese text aloud using the browser's built-in Web Speech API (ja-JP).
  */
 export function speakJapanese(
   japaneseText: string,
@@ -60,21 +46,25 @@ export function speakJapanese(
 ): SpeechResult {
   const text = getPlainSpeechText(japaneseText);
   if (!text || typeof window === 'undefined') {
+    callbacks?.onEnd?.();
     return { supported: true };
   }
 
+  stopSpeaking();
+
   if (!('speechSynthesis' in window)) {
-    playOnlineTTSFallback(text, callbacks);
-    return { supported: true };
+    const msg = 'Browser ini tidak mendukung fitur pelafalan audio (Web Speech API).';
+    callbacks?.onError?.(msg);
+    return { supported: false, error: msg };
   }
 
   try {
     loadVoices();
     const jpVoice =
-      cachedVoices.find(v => v.lang === 'ja-JP' && /google|kyoko|otoya|nanami|haruka/i.test(v.name)) ||
-      cachedVoices.find(v => v.lang.toLowerCase().startsWith('ja'));
+      cachedVoices.find(
+        v => v.lang === 'ja-JP' && /google|kyoko|otoya|nanami|haruka/i.test(v.name)
+      ) || cachedVoices.find(v => v.lang.toLowerCase().startsWith('ja'));
 
-    window.speechSynthesis.cancel();
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
     }
@@ -86,48 +76,39 @@ export function speakJapanese(
     if (jpVoice) utterance.voice = jpVoice;
 
     activeUtterance = utterance;
-    let started = false;
 
     utterance.onstart = () => {
-      started = true;
+      if (activeUtterance !== utterance) return;
       callbacks?.onStart?.();
     };
     utterance.onend = () => {
+      if (activeUtterance === utterance) {
+        activeUtterance = null;
+      }
       callbacks?.onEnd?.();
     };
-    utterance.onerror = () => {
-      if (!started) {
-        playOnlineTTSFallback(text, callbacks);
-      } else {
-        callbacks?.onEnd?.();
+    utterance.onerror = event => {
+      if (activeUtterance === utterance) {
+        activeUtterance = null;
       }
+      if (event.error === 'canceled' || event.error === 'interrupted') {
+        callbacks?.onEnd?.();
+        return;
+      }
+      callbacks?.onError?.('Gagal memutar pelafalan audio pada browser ini.');
     };
 
-    setTimeout(() => {
+    pendingTimerId = setTimeout(() => {
+      pendingTimerId = null;
       if (activeUtterance !== utterance) return;
       window.speechSynthesis.speak(utterance);
-      if (!jpVoice) {
-        setTimeout(() => {
-          if (!started && !window.speechSynthesis.speaking) {
-            playOnlineTTSFallback(text, callbacks);
-          }
-        }, 600);
-      }
-    }, 40);
+    }, 35);
 
     return { supported: true };
   } catch {
-    playOnlineTTSFallback(text, callbacks);
-    return { supported: true };
-  }
-}
-
-export function stopSpeaking(): void {
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
-  if (fallbackAudio) {
-    fallbackAudio.pause();
-    fallbackAudio = null;
+    activeUtterance = null;
+    const msg = 'Pelafalan audio tidak tersedia saat ini.';
+    callbacks?.onError?.(msg);
+    return { supported: false, error: msg };
   }
 }

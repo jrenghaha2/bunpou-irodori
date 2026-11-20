@@ -188,6 +188,19 @@ export function AppHeader({
             )}
           </button>
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="fileImportData"
+            accept=".json,application/json"
+            className="sr-only"
+            aria-label="Pilih file backup JSON"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) onFileSelected(file);
+            }}
+          />
+
           {authReady && !user ? (
             <>
               <button
@@ -214,19 +227,6 @@ export function AppHeader({
                 <FolderOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span className="hidden md:inline">Restore</span>
               </button>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                id="fileImportData"
-                accept=".json,application/json"
-                className="sr-only"
-                aria-label="Pilih file backup JSON"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) onFileSelected(file);
-                }}
-              />
             </>
           ) : null}
 
@@ -413,6 +413,38 @@ export function AppHeader({
                         aria-hidden="true"
                       />
                       <span>Sinkronkan Progres Sekarang</span>
+                    </button>
+                  </div>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      id="menuExportBackup"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onExport();
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                      <span>Backup Progres (.json)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      id="menuImportBackup"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onTriggerImport();
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <FolderOpen className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                      <span>Restore dari File (.json)</span>
                     </button>
                   </div>
 

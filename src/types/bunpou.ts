@@ -34,6 +34,15 @@ export const BOOK_ORDER: readonly BookId[] = [
   'elementary2',
 ] as const;
 
+export const BOOK_CHAPTER_RANGES: Record<
+  BookId,
+  { min: ChapterNumber; max: ChapterNumber; count: number }
+> = {
+  introductory: { min: 3, max: 18, count: 16 },
+  elementary1: { min: 1, max: 18, count: 18 },
+  elementary2: { min: 1, max: 18, count: 18 },
+};
+
 export interface AbbreviationItem {
   code: string;
   meaning: string;
@@ -53,7 +62,7 @@ export interface BunpouPattern {
   level: 'A1' | 'A2';
   topicJp?: string;
   topicId?: string;
-  chapterNumber: number;
+  chapterNumber: ChapterNumber;
   chapterTitleJp: string;
   chapterTitleId: string;
   patternIndex: number;
@@ -72,10 +81,9 @@ export interface ChapterData {
   bookId: BookId;
   topicJp?: string;
   topicId?: string;
-  chapterNumber: number;
+  chapterNumber: ChapterNumber;
   titleJp: string;
   titleId: string;
-  chapterNote?: string;
   patterns: BunpouPattern[];
 }
 
@@ -183,6 +191,11 @@ export interface BackupParseResult {
   impHard: string[];
   rejectedIds: string[];
   isEmptyBackup: boolean;
+}
+
+export interface PendingRestoreState {
+  parsed: BackupParseResult;
+  fileName: string;
 }
 
 export interface StorageMutationResult {

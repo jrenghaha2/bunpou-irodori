@@ -164,6 +164,7 @@ export function FlashcardPanel({
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
+                  e.stopPropagation();
                   onFlip();
                 }
               }}

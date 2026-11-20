@@ -43,7 +43,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: '{日本|にほん}に{来|き}て1{年|ねん}になります。', id: 'Sudah 1 tahun sejak saya datang ke Jepang.' },
             { jp: 'この{会社|かいしゃ}で{働|はたら}いて、もう3{年|ねん}になります。', id: 'Sudah 3 tahun saya bekerja di perusahaan ini.' },
-            { jp: '{日本語|にほんご}の{勉強|べんきょう}を{始|はじ}めて、6か月になります。', id: 'Sudah 6 bulan sejak saya mulai belajar bahasa Jepang.' },
+            { jp: '{日本語|にほんご}の{勉強|べんきょう}を{始|はじ}めて、6か{月|げつ}になります。', id: 'Sudah 6 bulan sejak saya mulai belajar bahasa Jepang.' },
           ],
         },
         {
@@ -163,7 +163,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           marugoto: 'N（言葉）ができます（か） / Nはできません (入門 3課)',
           examples: [
             { jp: '{日本語|にほんご}、{英語|えいご}、フィリピノ{語|ご}、スペイン{語|ご}ができます。', id: 'Saya bisa bahasa Jepang, Inggris, Filipina, dan Spanyol.' },
-            { jp: 'ギターが少しできます。', id: 'Saya bisa bermain gitar sedikit.' },
+            { jp: 'ギターが{少|すこ}しできます。', id: 'Saya bisa bermain gitar sedikit.' },
             { jp: '{車|くるま}の{運転|うんてん}ができますか？', id: 'Apakah Anda bisa mengemudi mobil?' },
           ],
         },
@@ -276,7 +276,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           marugoto: 'N1やN2（など） (初級1 5課)',
           examples: [
             { jp: '{海|うみ}や{山|やま}で{遊|あそ}ぶのも{楽|たの}しいです。', id: 'Bermain di laut atau gunung (dan tempat lain) juga menyenangkan.' },
-            { jp: '{スーパー|すーぱー}で{野菜|やさい}や{果物|くだもの}などを{買|か}いました。', id: 'Saya membeli sayuran, buah-buahan, dan lain-lain di supermarket.' },
+            { jp: 'スーパーで{野菜|やさい}や{果物|くだもの}などを{買|か}いました。', id: 'Saya membeli sayuran, buah-buahan, dan lain-lain di supermarket.' },
             { jp: '{春|はる}は{桜|さくら}やチューリップがきれいです。', id: 'Di musim semi, bunga sakura, tulip, dan lainnya sangat indah.' },
           ],
         },
@@ -572,7 +572,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: 'ねぼうして、{今|いま}、{起|お}きました。', id: 'Saya kesiangan, baru bangun sekarang.' },
             { jp: '{道|みち}に{迷|まよ}って、ちょっと{遅|おく}れます。', id: 'Saya tersesat di jalan, jadi agak terlambat.' },
-            { jp: '{バス|ばす}に{乗|の}り{遅|おく}れて、{間|ま}に{合|あ}いませんでした。', id: 'Ketinggalan bus, jadi tidak sempat tepat waktu.' },
+            { jp: 'バスに{乗|の}り{遅|おく}れて、{間|ま}に{合|あ}いませんでした。', id: 'Ketinggalan bus, jadi tidak sempat tepat waktu.' },
           ],
         },
       ],
@@ -742,7 +742,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: '{日本語|にほんご}をチェックしてもらえませんか？', id: 'Bisakah Anda tolong memeriksa bahasa Jepang saya?' },
             { jp: 'この{漢字|かんじ}の{読|よ}み{方|かた}を{教|おし}えてもらえませんか？', id: 'Bisakah Anda mengajari saya cara baca kanji ini?' },
-            { jp: 'もう少しゆっくり{話|はな}してもらえませんか？', id: 'Bisakah Anda berbicara sedikit lebih pelan?' },
+            { jp: 'もう{少|すこ}しゆっくり{話|はな}してもらえませんか？', id: 'Bisakah Anda berbicara sedikit lebih pelan?' },
           ],
         },
         {
@@ -758,7 +758,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: 'この{書類|しょるい}の{書|か}き{方|かた}がよくわかりません。', id: 'Saya kurang mengerti cara mengisi dokumen ini.' },
             { jp: 'この{洗濯機|せんたくき}の{使|つか}い{方|かた}を{教|おし}えてください。', id: 'Tolong ajari cara menggunakan mesin cuci ini.' },
-            { jp: '{納豆|なっとう}の{食|た}べ{方|かた}を知っていますか？', id: 'Apakah kamu tahu cara makan natto?' },
+            { jp: '{納豆|なっとう}の{食|た}べ{方|かた}を{知|し}っていますか？', id: 'Apakah kamu tahu cara makan natto?' },
           ],
         },
       ],
@@ -977,7 +977,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           marugoto: 'イA-／ナA-そうなN',
           examples: [
             { jp: 'それ、{辛|から}そうな{料理|りょうり}ですね。', id: 'Itu masakan yang kelihatannya pedas ya.' },
-            { jp: 'おいしそうなケーキが並んでいますね。', id: 'Kue-kue yang terlihat lezat berjejer rapi ya.' },
+            { jp: 'おいしそうなケーキが{並|なら}んでいますね。', id: 'Kue-kue yang terlihat lezat berjejer rapi ya.' },
             { jp: '{優|やさ}しそうな{先生|せんせい}ですね。', id: 'Guru yang kelihatannya baik hati ya.' },
           ],
         },
@@ -1183,7 +1183,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: '{明日|あした}の{午後|ごご}、{早退|そうたい}してもいいでしょうか？', id: 'Bolehkah kiranya besok sore saya pulang lebih awal?' },
             { jp: '{来週|らいしゅう}の{金曜日|きんようび}、{休|やす}みを{取|と}ってもいいでしょうか？', id: 'Bolehkah saya mengambil cuti pada hari Jumat minggu depan?' },
-            { jp: 'ここで少し{休憩|きゅうけい}してもいいでしょうか？', id: 'Bolehkah saya beristirahat sebentar di sini?' },
+            { jp: 'ここで{少|すこ}し{休憩|きゅうけい}してもいいでしょうか？', id: 'Bolehkah saya beristirahat sebentar di sini?' },
           ],
         },
         {
@@ -1289,7 +1289,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           examples: [
             { jp: '{飲|の}むと、{眠|ねむ}くなります。{飲|の}んだあと、{運転|うんてん}しないでくださいね。', id: 'Kalau diminum jadi mengantuk. Setelah minum obat ini, jangan menyetir ya.' },
             { jp: '{食事|しょくじ}をしたあとで、この{薬|くすり}を{飲|の}みます。', id: 'Setelah makan, minum obat ini.' },
-            { jp: '{運動|うんどう}したあと、水をたくさん{飲|の}みました。', id: 'Setelah berolahraga, saya minum banyak air.' },
+            { jp: '{運動|うんどう}したあと、{水|みず}をたくさん{飲|の}みました。', id: 'Setelah berolahraga, saya minum banyak air.' },
           ],
         },
         {
@@ -1367,7 +1367,7 @@ export const IRODORI_DASAR1_SPEC: RawBookSpec = {
           marugoto: 'V-るように しています (初級2 15課)',
           examples: [
             { jp: 'できるだけ、{野菜|やさい}をたくさん{食|た}べるようにしています。', id: 'Sebisa mungkin saya berusaha makan banyak sayuran.' },
-            { jp: '{毎日|まいにち}、1駅{分|ぶん}{歩|ある}くようにしています。', id: 'Setiap hari saya berusaha berjalan kaki sejauh satu stasiun.' },
+            { jp: '{毎日|まいにち}、1{駅分|えきぶん}{歩|ある}くようにしています。', id: 'Setiap hari saya berusaha berjalan kaki sejauh satu stasiun.' },
             { jp: '{寝|ね}る{前|まえ}に{白湯|さゆ}を{飲|の}むようにしています。', id: 'Saya membiasakan diri minum air hangat sebelum tidur.' },
           ],
         },

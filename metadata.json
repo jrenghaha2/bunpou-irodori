@@ -1,6 +1,6 @@
 {
   "name": "Irodori Bunpou — Pembelajaran Tata Bahasa Jepang A1–A2",
-  "description": "Aplikasi pembelajaran tata bahasa Jepang (Bunpou) interaktif lengkap dalam Bahasa Indonesia berdasarkan 3 buku Irodori (Introductory A1, Elementary 1 A2, Elementary 2 A2 — 54 Bab) dilengkapi Flashcard 3D, Daftar Bunpou dengan Furigana & Audio Native, Kuis JFT-Basic/JLPT dengan Statistik & Riwayat, Tema Terang/Gelap, Backup/Restore JSON, serta Sinkronisasi Cloud Firebase.",
+  "description": "Aplikasi pembelajaran tata bahasa Jepang (Bunpou) interaktif lengkap dalam Bahasa Indonesia berdasarkan 3 buku Irodori (Pemula A1, Dasar 1 A2, Dasar 2 A2 — 52 Bab · 264 Pola) dilengkapi Flashcard 3D, Daftar Bunpou dengan Furigana & Audio Native, Kuis JFT-Basic/JLPT dengan Statistik & Riwayat, Tema Terang/Gelap, Backup/Restore JSON, serta Sinkronisasi Cloud Firebase.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

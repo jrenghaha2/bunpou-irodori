@@ -148,7 +148,7 @@ export function Sidebar({
                     key={ch.id}
                     type="button"
                     id={`btnChapter-${ch.chapterNumber}`}
-                    onClick={() => onSelectChapter(ch.chapterNumber as ChapterFilter)}
+                    onClick={() => onSelectChapter(ch.chapterNumber)}
                     className={`w-full text-left px-3 py-2 rounded-xl transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 border ${
                       isSelected
                         ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-900 dark:text-indigo-100 border-indigo-200 dark:border-indigo-800'

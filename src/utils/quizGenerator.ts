@@ -1,5 +1,4 @@
 import type { BookId, BunpouPattern, QuizFocus, QuizQuestion, QuizQuestionType } from '../types/bunpou';
-import { stripFuriganaMarkup } from './furiganaConverter';
 
 export const ABC_LABELS = ['A', 'B', 'C', 'D'] as const;
 
@@ -59,51 +58,156 @@ function seededShuffle<T>(items: T[], seed?: number): T[] {
   return arr;
 }
 
-function findClozeTarget(
-  pattern: BunpouPattern
-): { blankedSentence: string; answer: string; fullSentence: string } | null {
-  const candidates: string[] = [];
+const GENERIC_SINGLE_PARTICLES = new Set([
+  'は',
+  'が',
+  'を',
+  'に',
+  'で',
+  'へ',
+  'と',
+  'も',
+  'の',
+  'や',
+  'か',
+  'ね',
+  'よ',
+]);
+
+interface RubySpan {
+  plainStart: number;
+  plainEnd: number;
+  rawStart: number;
+  rawEnd: number;
+}
+
+/**
+ * Replaces a matched plain-text substring in a sentence containing `{漢字|かな}` ruby markup
+ * without stripping ruby markup from the rest of the sentence.
+ * Returns null if the match would slice halfway through a single ruby token.
+ */
+function blankSentencePreservingRuby(
+  rubySentence: string,
+  target: string
+): { blankedSentence: string } | null {
+  const spans: RubySpan[] = [];
+  let plain = '';
+  const rubyRegex = /\{([^{}|]+)\|([^{}|]+)\}/g;
+  let lastRawIdx = 0;
+  let match: RegExpExecArray | null;
+
+  const pushPlainChars = (text: string, startRaw: number) => {
+    for (let i = 0; i < text.length; i++) {
+      spans.push({
+        plainStart: plain.length,
+        plainEnd: plain.length + 1,
+        rawStart: startRaw + i,
+        rawEnd: startRaw + i + 1,
+      });
+      plain += text[i];
+    }
+  };
+
+  while ((match = rubyRegex.exec(rubySentence)) !== null) {
+    if (match.index > lastRawIdx) {
+      pushPlainChars(rubySentence.slice(lastRawIdx, match.index), lastRawIdx);
+    }
+    const base = match[1];
+    spans.push({
+      plainStart: plain.length,
+      plainEnd: plain.length + base.length,
+      rawStart: match.index,
+      rawEnd: match.index + match[0].length,
+    });
+    plain += base;
+    lastRawIdx = match.index + match[0].length;
+  }
+
+  if (lastRawIdx < rubySentence.length) {
+    pushPlainChars(rubySentence.slice(lastRawIdx), lastRawIdx);
+  }
+
+  if (plain.length <= target.length + 3) return null;
+
+  let searchFrom = 0;
+  while (searchFrom <= plain.length - target.length) {
+    const idx = plain.indexOf(target, searchFrom);
+    if (idx === -1) return null;
+
+    const matchEnd = idx + target.length;
+    const startSpan = spans.find(s => s.plainStart === idx);
+    const endSpan = spans.find(s => s.plainEnd === matchEnd);
+
+    if (startSpan && endSpan) {
+      const blankedSentence =
+        rubySentence.slice(0, startSpan.rawStart) +
+        '（　　）' +
+        rubySentence.slice(endSpan.rawEnd);
+      return { blankedSentence };
+    }
+
+    searchFrom = idx + 1;
+  }
+
+  return null;
+}
+
+export function findClozeTarget(pattern: BunpouPattern): {
+  blankedSentence: string;
+  answer: string;
+  fullSentence: string;
+  translation: string;
+} | null {
+  const primaryCandidates: string[] = [];
+  const particleCandidates: string[] = [];
+
   for (const formula of pattern.formulas) {
     const cleaned = formula
-      .replace(/\([^)]*\)/g, '')
-      .replace(/（[^）]*）/g, '')
-      .replace(/\[[^\]]*\]/g, '')
-      .replace(/【[^】]*】/g, '')
-      .replace(/イA|ナA|F\.Biasa/g, '')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/（[^）]*）/g, ' ')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/【[^】]*】/g, ' ')
+      .replace(/F\.Biasa|イA|ナA|Kel\.I+|V[0-9]*|N[0-9]*|A[0-9]*|S[0-9]*/g, ' ')
       .trim();
 
     const parts = cleaned
-      .split(/[+/、/・\s]/)
-      .map(p => p.trim())
-      .filter(p => p.length > 0 && /[ぁ-んァ-ヶ一-龠]/.test(p));
+      .split(/[+＋/／、・\s=＝→<>＜＞|｜「」『』]+/)
+      .map(p => p.replace(/^[〜～\-－]+|[〜～\-－]+$/g, '').trim())
+      .filter(p => p.length >= 1 && p.length <= 12 && /^[ぁ-んァ-ヶ一-龠ー]+$/.test(p));
 
     for (const part of parts) {
-      const normalized = part.replace(/^〜|^～|〜$|～$|^[-－]|[-－]$/g, '').trim();
-      if (normalized.length >= 1 && normalized.length <= 12) {
-        candidates.push(normalized);
+      if (part.length === 1 && GENERIC_SINGLE_PARTICLES.has(part)) {
+        particleCandidates.push(part);
+      } else {
+        primaryCandidates.push(part);
       }
     }
   }
 
-  const uniqueCandidates = Array.from(new Set(candidates)).sort((a, b) => {
-    const scoreA = a.length >= 2 && a.length <= 8 ? a.length + 10 : a.length;
-    const scoreB = b.length >= 2 && b.length <= 8 ? b.length + 10 : b.length;
-    return scoreB - scoreA;
-  });
+  const sortBySpecificity = (list: string[]) =>
+    Array.from(new Set(list)).sort((a, b) => {
+      const scoreA = a.length >= 2 && a.length <= 8 ? a.length + 10 : a.length;
+      const scoreB = b.length >= 2 && b.length <= 8 ? b.length + 10 : b.length;
+      return scoreB - scoreA;
+    });
+
+  // Only allow single-character generic particles when the pattern itself has no multi-char grammar stem
+  const orderedCandidates =
+    primaryCandidates.length > 0
+      ? sortBySpecificity(primaryCandidates)
+      : sortBySpecificity(particleCandidates);
 
   for (const example of pattern.examples) {
     if (!example || !example.japanese) continue;
-    const plainSentence = stripFuriganaMarkup(example.japanese);
 
-    for (const cand of uniqueCandidates) {
-      const idx = plainSentence.indexOf(cand);
-      if (idx !== -1 && plainSentence.length > cand.length + 3) {
-        const blankedSentence =
-          plainSentence.slice(0, idx) + '（　　）' + plainSentence.slice(idx + cand.length);
+    for (const cand of orderedCandidates) {
+      const blanked = blankSentencePreservingRuby(example.japanese, cand);
+      if (blanked) {
         return {
-          blankedSentence,
+          blankedSentence: blanked.blankedSentence,
           answer: cand,
           fullSentence: example.japanese,
+          translation: example.translation,
         };
       }
     }
@@ -165,11 +269,14 @@ function pickClozeDistractors(
   for (const p of allPatterns) {
     for (const f of p.formulas) {
       const parts = f
-        .replace(/\([^)]*\)/g, '')
-        .replace(/\[[^\]]*\]/g, '')
-        .split(/[+/、/]/)
-        .map(s => s.replace(/^〜|^～|〜$|～$/g, '').trim())
-        .filter(s => /^[ぁ-んァ-ヶ一-龠]+$/.test(s));
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/（[^）]*）/g, ' ')
+        .replace(/\[[^\]]*\]/g, ' ')
+        .replace(/【[^】]*】/g, ' ')
+        .replace(/F\.Biasa|イA|ナA|V[0-9]*|N[0-9]*|A[0-9]*/g, ' ')
+        .split(/[+＋/／、・\s]+/)
+        .map(s => s.replace(/^[〜～\-－]+|[〜～\-－]+$/g, '').trim())
+        .filter(s => /^[ぁ-んァ-ヶ一-龠ー]+$/.test(s));
 
       for (const part of parts) {
         if (part === correct) continue;
@@ -208,20 +315,20 @@ function buildClozeQuestion(
   const options = seededShuffle([cloze.answer, ...distractors], seed + 31);
   const correctIndex = options.indexOf(cloze.answer);
 
-  const translationHint = pattern.examples[0]?.translation
-    ? `Arti: "${pattern.examples[0].translation}"`
+  const hintText = cloze.translation
+    ? `Arti: "${cloze.translation}"`
     : `Fungsi: ${pattern.functionText}`;
 
   return {
     id: `q-cloze-${pattern.id}-${seed}`,
     type: 'cloze',
     pattern,
-    prompt: `Lengkapi bagian rumpang pada kalimat berikut agar sesuai dengan pola "${pattern.title}". ${translationHint}`,
+    prompt: `Lengkapi bagian rumpang pada kalimat berikut sesuai konteks maknanya. ${hintText}`,
     japanesePrompt: cloze.blankedSentence,
     japaneseFull: cloze.fullSentence,
     options,
     correctIndex,
-    explanation: `Jawaban yang tepat adalah "${cloze.answer}". Rumus penyambungan: ${pattern.formulas[0]}. ${pattern.functionText}`,
+    explanation: `Jawaban yang tepat adalah "${cloze.answer}" (pola ${pattern.title}). Rumus: ${pattern.formulas[0]}. ${pattern.functionText}`,
   };
 }
 

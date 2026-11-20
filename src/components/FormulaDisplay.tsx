@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import type { FormulaTokenKind } from '../types/bunpou';
 import { FORMULA_LEGEND, tokenizeFormula } from '../utils/formulaTokenizer';
 
@@ -20,33 +21,32 @@ interface FormulaDisplayProps {
   centered?: boolean;
 }
 
-export function FormulaDisplay({
+export const FormulaDisplay = memo(function FormulaDisplay({
   formulas,
   compact = false,
   centered = false,
 }: FormulaDisplayProps) {
+  const tokenizedLines = useMemo(() => formulas.map(line => tokenizeFormula(line)), [formulas]);
+
   return (
     <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
-      {formulas.map((line, lineIdx) => {
-        const tokens = tokenizeFormula(line);
-        return (
-          <div
-            key={lineIdx}
-            className={`flex flex-wrap items-center gap-1.5 ${
-              centered ? 'justify-center' : ''
-            } ${compact ? 'text-xs sm:text-[13px]' : 'text-sm'} leading-relaxed`}
-          >
-            {tokens.map((tok, tokIdx) => (
-              <span key={tokIdx} className={TOKEN_STYLES[tok.kind]}>
-                {tok.text}
-              </span>
-            ))}
-          </div>
-        );
-      })}
+      {tokenizedLines.map((tokens, lineIdx) => (
+        <div
+          key={lineIdx}
+          className={`flex flex-wrap items-center gap-1.5 ${
+            centered ? 'justify-center' : ''
+          } ${compact ? 'text-xs sm:text-[13px]' : 'text-sm'} leading-relaxed`}
+        >
+          {tokens.map((tok, tokIdx) => (
+            <span key={tokIdx} className={TOKEN_STYLES[tok.kind]}>
+              {tok.text}
+            </span>
+          ))}
+        </div>
+      ))}
     </div>
   );
-}
+});
 
 export function FormulaLegend() {
   return (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -40,38 +40,53 @@ export function BunpouListPanel({
   const [statusFilter, setStatusFilter] = useState<ListStatusFilter>('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    setQuery('');
+    setStatusFilter('all');
+    setExpandedIds(new Set());
+  }, [bookShortTitle]);
+
+  const indexedPatterns = useMemo(
+    () =>
+      patterns.map(p => ({
+        pattern: p,
+        haystack: [
+          p.title,
+          p.shortPattern,
+          p.itemCode ?? '',
+          p.topicJp ?? '',
+          p.topicId ?? '',
+          p.marugotoRef ?? '',
+          p.functionText,
+          p.chapterTitleId,
+          p.chapterTitleJp,
+          `bab ${p.chapterNumber}`,
+          `第${p.chapterNumber}課`,
+          ...p.formulas,
+          ...p.notes,
+          ...p.examples.map(
+            e =>
+              `${stripFuriganaMarkup(e.japanese)} ${extractFuriganaReading(e.japanese)} ${e.translation}`
+          ),
+        ]
+          .join(' ')
+          .toLowerCase(),
+      })),
+    [patterns]
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return patterns.filter(p => {
-      if (statusFilter === 'mastered' && !masteredSet.has(p.id)) return false;
-      if (statusFilter === 'hard' && !hardSet.has(p.id)) return false;
-      if (statusFilter === 'unmastered' && masteredSet.has(p.id)) return false;
-
-      if (!q) return true;
-      const haystack = [
-        p.title,
-        p.shortPattern,
-        p.itemCode ?? '',
-        p.topicJp ?? '',
-        p.topicId ?? '',
-        p.marugotoRef ?? '',
-        p.functionText,
-        p.chapterTitleId,
-        p.chapterTitleJp,
-        `bab ${p.chapterNumber}`,
-        `第${p.chapterNumber}課`,
-        ...p.formulas,
-        ...p.notes,
-        ...p.examples.map(
-          e =>
-            `${stripFuriganaMarkup(e.japanese)} ${extractFuriganaReading(e.japanese)} ${e.translation}`
-        ),
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [patterns, query, statusFilter, masteredSet, hardSet]);
+    return indexedPatterns
+      .filter(({ pattern: p, haystack }) => {
+        if (statusFilter === 'mastered' && !masteredSet.has(p.id)) return false;
+        if (statusFilter === 'hard' && !hardSet.has(p.id)) return false;
+        if (statusFilter === 'unmastered' && masteredSet.has(p.id)) return false;
+        if (!q) return true;
+        return haystack.includes(q);
+      })
+      .map(item => item.pattern);
+  }, [indexedPatterns, query, statusFilter, masteredSet, hardSet]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {

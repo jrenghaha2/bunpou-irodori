@@ -3,6 +3,7 @@ import { CheckCircle2, X, XCircle } from 'lucide-react';
 import type { QuizSessionHistoryEntry } from '../../types/bunpou';
 import { AudioButton } from '../AudioButton';
 import { JapaneseText } from '../JapaneseText';
+import { Modal } from '../Modal';
 import {
   formatShortDate,
   getFocusLabel,
@@ -27,18 +28,6 @@ export function QuizAnswerHistoryModal({
     setOnlyWrong(false);
   }, [entry?.id]);
 
-  useEffect(() => {
-    if (!entry) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [entry, onClose]);
-
   if (!entry) return null;
 
   const answers = entry.answers ?? [];
@@ -46,17 +35,14 @@ export function QuizAnswerHistoryModal({
   const displayed = onlyWrong ? answers.filter(a => !a.correct) : answers;
 
   return (
-    <div
+    <Modal
+      open={Boolean(entry)}
+      onClose={onClose}
       id="quizHistoryModal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="quizHistoryModalTitle"
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+      ariaLabelledBy="quizHistoryModalTitle"
+      maxWidthClass="max-w-2xl"
+      panelClassName="max-h-[85vh] flex flex-col overflow-hidden"
     >
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3
@@ -171,7 +157,6 @@ export function QuizAnswerHistoryModal({
             ))
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

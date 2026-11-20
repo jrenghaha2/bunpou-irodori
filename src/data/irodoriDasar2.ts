@@ -480,7 +480,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           examples: [
             { jp: '{道|みち}を{歩|ある}いているとき、リスを{見|み}ました。ウミネコが{近|ちか}くに{来|き}たとき、ちょっとこわかったです。', id: 'Saat sedang berjalan di jalan setapak, saya melihat tupai. Ketika burung camar datang mendekat, agak menakutkan.' },
             { jp: '{日本|にほん}へ{来|く}るとき、{空港|くうこう}で{両替|りょうがえ}しました。', id: 'Saat akan datang ke Jepang, saya menukar uang di bandara.' },
-            { jp: '{ホテル|ほてる}に{着|つ}いたとき、もう{夜|よる}の9{時|じ}でした。', id: 'Ketika tiba di hotel, hari sudah jam 9 malam.' },
+            { jp: 'ホテルに{着|つ}いたとき、もう{夜|よる}の9{時|じ}でした。', id: 'Ketika tiba di hotel, hari sudah jam 9 malam.' },
           ],
         },
         {
@@ -657,7 +657,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           marugoto: 'Nだけ',
           examples: [
             { jp: '{今年|ことし}は、1{日|にち}だけ{実家|じっか}に{帰|かえ}りました。', id: 'Tahun ini saya pulang ke rumah orang tua selama 1 hari saja.' },
-            { jp: '{家族|かぞく}だけで静かに{祝|いわ}いました。', id: 'Kami merayakannya dengan tenang bersama keluarga saja.' },
+            { jp: '{家族|かぞく}だけで{静|しず}かに{祝|いわ}いました。', id: 'Kami merayakannya dengan tenang bersama keluarga saja.' },
             { jp: '{名前|なまえ}だけ{書|か}いてください。', id: 'Tolong tulis namanya saja.' },
           ],
         },
@@ -765,7 +765,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           examples: [
             { jp: 'お{葬式|そうしき}には、{何|なに}を{持|も}っていけばいいですか？', id: 'Ke upacara pemakaman, sebaiknya membawa apa ya?' },
             { jp: '{結婚式|けっこんしき}には、どんな{服|ふく}を{着|き}て{行|い}けばいいですか？', id: 'Ke pesta pernikahan, sebaiknya mengenakan pakaian seperti apa ya?' },
-            { jp: 'ご祝儀はいくら{包|つつ}めばいいですか？', id: 'Uang ucapan selamat sebaiknya dibungkus berapa ya?' },
+            { jp: 'ご{祝儀|しゅうぎ}はいくら{包|つつ}めばいいですか？', id: 'Uang ucapan selamat sebaiknya dibungkus berapa ya?' },
           ],
         },
         {
@@ -886,7 +886,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
         },
         {
           code: '2a',
-          title: 'ナA-／イA- すぎます',
+          title: 'ナA-すぎます',
           formulas: [
             'ナA（tanpa な） + すぎます (Terlalu ナA — mis. 派手すぎます, 地味すぎます)',
           ],
@@ -896,7 +896,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           examples: [
             { jp: 'この{色|いろ}はちょっと{派手|はで}すぎます。', id: 'Warna ini agak terlalu mencolok.' },
             { jp: 'このデザインはちょっと{地味|じみ}すぎますね。', id: 'Desain ini agak terlalu polos ya.' },
-            { jp: 'このバッグは{シンプル|しんぷる}すぎます。', id: 'Tas ini terlalu sederhana.' },
+            { jp: 'このバッグはシンプルすぎます。', id: 'Tas ini terlalu sederhana.' },
           ],
         },
         {
@@ -924,7 +924,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           marugoto: '→「かつどう」 2. (入門 16課)',
           examples: [
             { jp: 'もうちょっと{大|おお}きいの、ありますか？', id: 'Apakah ada yang sedikit lebih besar?' },
-            { jp: 'もう少し{安|やす}いのはありませんか？', id: 'Apakah tidak ada yang sedikit lebih murah?' },
+            { jp: 'もう{少|すこ}し{安|やす}いのはありませんか？', id: 'Apakah tidak ada yang sedikit lebih murah?' },
             { jp: 'もっと{静|しず}かなのがいいです。', id: 'Saya lebih suka yang lebih tenang/kalem.' },
           ],
         },
@@ -1018,7 +1018,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           examples: [
             { jp: 'トーシマの{掃除機|そうじき}のほうが{動|うご}かしやすいですよ。', id: 'Penyedot debu merek Toshima lebih mudah digerakkan lho.' },
             { jp: 'このアプリは{画面|がめん}が{見|み}やすいです。', id: 'Aplikasi ini layarnya mudah dilihat.' },
-            { jp: 'この{ペン|ぺん}はとても{書|か}きやすいですね。', id: 'Pulpen ini sangat enak/mudah dipakai menulis ya.' },
+            { jp: 'このペンはとても{書|か}きやすいですね。', id: 'Pulpen ini sangat enak/mudah dipakai menulis ya.' },
           ],
         },
         {
@@ -1031,7 +1031,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           examples: [
             { jp: 'どっちが{使|つか}いやすいですか？', id: 'Mana yang lebih mudah digunakan?' },
             { jp: 'ネットショップと{駅前|えきまえ}の{店|みせ}と、どちらが{安|やす}いですか？', id: 'Toko online atau toko depan stasiun, mana yang lebih murah?' },
-            { jp: 'A社とB社のパソコン、どっちが{軽|かる}いですか？', id: 'Laptop perusahaan A dan B, mana yang lebih ringan?' },
+            { jp: 'A{社|しゃ}とB{社|しゃ}のパソコン、どっちが{軽|かる}いですか？', id: 'Laptop perusahaan A dan B, mana yang lebih ringan?' },
           ],
         },
         {
@@ -1213,7 +1213,7 @@ export const IRODORI_DASAR2_SPEC: RawBookSpec = {
           code: '1',
           title: 'V（命令形） / V-るな（禁止の命令形）',
           formulas: [
-            '命令形 (Perintah darurat): Kel.I u→e (急げ・逃げろ) / Kel.II coret る+ろ (集まれ・逃げろ) / する→しろ / 来る→来い',
+            '命令形 (Perintah darurat): Kel.I u→e (急げ・集まれ) / Kel.II coret る+ろ (逃げろ・見ろ) / する→しろ / 来る→来い',
             '禁止形 (Larangan darurat): V-る（辞書形） + な (走るな・戻るな・押すな)',
           ],
           functionText:

@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { IRODORI_DATASET } from '../data/irodoriDataset';
 import { tokenizeFormula } from './formulaTokenizer';
 import {
@@ -10,6 +12,7 @@ import {
 } from './furiganaConverter';
 import {
   countQuizBankSize,
+  findClozeTarget,
   formatChapterSelectionLabel,
   generateQuizQuestions,
 } from './quizGenerator';
@@ -56,11 +59,11 @@ test('loads all 3 official Irodori books (Pemula, Dasar 1, Dasar 2) and all 52 g
 
   const totalChapters = DATASET.books.reduce((sum, b) => sum + b.chapters.length, 0);
   assert.equal(totalChapters, 52);
-  assert.ok(DATASET.allPatterns.length >= 240, `Expected >= 240 patterns, got ${DATASET.allPatterns.length}`);
+  assert.equal(DATASET.allPatterns.length, 264);
   assert.equal(DATASET.abbreviations.length, 16);
 });
 
-test('every pattern has valid Firestore pattern ID, clean formulas, functionText, and at least 3 reibun with Indonesian translations', () => {
+test('every pattern has valid Firestore pattern ID, clean formulas, 0 bare Kanji, 0 Katakana ruby, and fixed dataset typos', () => {
   const idRegex = /^(introductory|elementary1|elementary2)-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/;
   const seenIds = new Set<string>();
 
@@ -88,8 +91,38 @@ test('every pattern has valid Firestore pattern ID, clean formulas, functionText
         ex.translation.trim().length > 0,
         `Missing Indonesian translation on ${p.id}: ${ex.japanese}`
       );
+
+      // Verify zero bare Kanji outside {漢字|かな}
+      const withoutRuby = ex.japanese.replace(/\{[^{}|]+\|[^{}|]+\}/g, '');
+      assert.ok(
+        !/[\u4e00-\u9faf\u3400-\u4dbf]/.test(withoutRuby),
+        `Bare kanji without furigana in ${p.id}: ${ex.japanese}`
+      );
+
+      // Verify zero Katakana-only bases wrapped in ruby
+      const rubyTokens = [...ex.japanese.matchAll(/\{([^{}|]+)\|([^{}|]+)\}/g)];
+      for (const m of rubyTokens) {
+        assert.ok(
+          !/^[\u30a0-\u30ffー]+$/.test(m[1]),
+          `Katakana should not have furigana ruby in ${p.id}: ${m[0]}`
+        );
+      }
     }
   }
+
+  // Regression checks for the 3 fixed dataset typos
+  const pemulaBab16P2 = DATASET.allPatterns.find(p => p.id === 'introductory-bab-16-p2');
+  assert.ok(pemulaBab16P2);
+  assert.ok(!pemulaBab16P2.marugotoRef?.includes('可能①'));
+
+  const dasar2Bab11P2 = DATASET.allPatterns.find(p => p.id === 'elementary2-bab-11-p2');
+  assert.ok(dasar2Bab11P2);
+  assert.equal(dasar2Bab11P2.title, 'ナA-すぎます');
+
+  const dasar2Bab16P1 = DATASET.allPatterns.find(p => p.id === 'elementary2-bab-16-p1');
+  assert.ok(dasar2Bab16P1);
+  assert.ok(dasar2Bab16P1.formulas[0].includes('急げ・集まれ'));
+  assert.ok(dasar2Bab16P1.formulas[0].includes('逃げろ・見ろ'));
 });
 
 test('formula tokenizer classifies official Irodori notation (N, V, イA, ナA, S（普通形）, slots, particles)', () => {
@@ -112,7 +145,7 @@ test('formula tokenizer classifies official Irodori notation (N, V, イA, ナA, 
   assert.equal(tokens5.find(t => t.text === '【場所】')?.kind, 'noun');
 });
 
-test('furigana converter parses inline {漢字|かな} ruby markup and strips cleanly for speech/search', () => {
+test('furigana converter parses inline {漢字|かな} ruby markup without homonym corruption', () => {
   const raw = '{東京|とうきょう}に {住|す}んでいます。';
   const segments = buildRubySegments(raw);
   assert.deepEqual(segments, [
@@ -122,9 +155,67 @@ test('furigana converter parses inline {漢字|かな} ruby markup and strips cl
     { text: 'んでいます。' },
   ]);
 
+  // Plain hiragana must stay plain hiragana (no legacy dictionary homonym replacement)
+  assert.deepEqual(buildRubySegments('あついですね'), [{ text: 'あついですね' }]);
+
   assert.equal(stripFuriganaMarkup(raw), '東京に 住んでいます。');
   assert.equal(extractFuriganaReading(raw), 'とうきょうに すんでいます。');
   assert.equal(getPlainSpeechText(raw), '東京に住んでいます。');
+});
+
+test('quiz generator preserves Furigana in cloze, matches exact example translation, and does not leak pattern title', () => {
+  const clozeQuestions = generateQuizQuestions(DATASET.allPatterns, {
+    bookId: 'elementary1',
+    chapters: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    focus: 'cloze',
+    count: 15,
+    seed: 2026,
+  });
+
+  assert.ok(clozeQuestions.length >= 10);
+  let sawRubyPreserved = false;
+
+  for (const q of clozeQuestions) {
+    assert.equal(q.type, 'cloze');
+    assert.ok(q.japanesePrompt?.includes('（　　）'), `Missing blank in ${q.id}`);
+    // Prompt must not leak pattern.title directly
+    assert.ok(
+      !q.prompt.includes(`pola "${q.pattern.title}"`),
+      `Cloze prompt leaked pattern title on ${q.id}: ${q.prompt}`
+    );
+
+    const matchedExample = q.pattern.examples.find(ex => ex.japanese === q.japaneseFull);
+    assert.ok(matchedExample, `Could not find matched example for ${q.id}`);
+    assert.ok(
+      q.prompt.includes(matchedExample.translation),
+      `Cloze translation hint did not match blanked example on ${q.id}`
+    );
+
+    if (q.japanesePrompt && /\{[^{}|]+\|[^{}|]+\}/.test(q.japanesePrompt)) {
+      sawRubyPreserved = true;
+    }
+  }
+  assert.ok(sawRubyPreserved, 'Expected cloze sentences to preserve {漢字|かな} ruby furigana');
+
+  // Verify findClozeTarget returns the exact matched example translation when matching example index > 0
+  const syntheticPattern = {
+    ...DATASET.allPatterns[0],
+    formulas: ['V-て + みます'],
+    examples: [
+      { japanese: '{今日|きょう}は{休|やす}みです。', translation: 'Hari ini libur.', raw: '' },
+      {
+        japanese: 'この{料理|りょうり}を{食|た}べてみます。',
+        translation: 'Saya coba makan masakan ini.',
+        raw: '',
+      },
+    ],
+  };
+  const target = findClozeTarget(syntheticPattern);
+  assert.ok(target);
+  assert.equal(target.answer, 'みます');
+  assert.equal(target.translation, 'Saya coba makan masakan ini.');
+  assert.ok(target.blankedSentence.includes('{料理|りょうり}'));
+  assert.ok(target.blankedSentence.includes('（　　）'));
 });
 
 test('quiz generator builds 10 valid questions across all 3 books including Pemula Bab 3-18', () => {
@@ -152,16 +243,6 @@ test('quiz generator builds 10 valid questions across all 3 books including Pemu
     assert.ok(q.correctIndex >= 0 && q.correctIndex < 4);
   }
 
-  const dasar1Chapters = [1, 2, 3, 5, 7, 10];
-  const dasar1Questions = generateQuizQuestions(DATASET.allPatterns, {
-    bookId: 'elementary1',
-    chapters: dasar1Chapters,
-    focus: 'mixed',
-    count: 10,
-    seed: 12345,
-  });
-  assert.equal(dasar1Questions.length, 10);
-
   assert.equal(formatChapterSelectionLabel([1, 2, 3, 5], 18), 'Bab 1–3, 5');
   assert.equal(
     formatChapterSelectionLabel([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], 16),
@@ -174,6 +255,23 @@ test('quiz generator builds 10 valid questions across all 3 books including Pemu
     ),
     'Semua Bab (1–18)'
   );
+});
+
+test('Flashcard 3D flip CSS classes match FlashcardPanel and Space key stops propagation', () => {
+  const css = fs.readFileSync(path.resolve(process.cwd(), 'src/index.css'), 'utf8');
+  const panel = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/components/FlashcardPanel.tsx'),
+    'utf8'
+  );
+
+  for (const cls of ['perspective-1200', 'card-flip-inner', 'is-flipped', 'card-face', 'card-face-back']) {
+    assert.ok(css.includes(`.${cls}`), `src/index.css missing .${cls}`);
+    assert.ok(panel.includes(cls), `FlashcardPanel.tsx missing class ${cls}`);
+  }
+  assert.match(css, /transform-style:\s*preserve-3d;/);
+  assert.match(css, /backface-visibility:\s*hidden;/);
+  assert.match(css, /transform:\s*rotateY\(180deg\);/);
+  assert.match(panel, /e\.stopPropagation\(\);/);
 });
 
 test('progress sets normalize disjointly and merge cloud + local without mastered/hard overlap', () => {

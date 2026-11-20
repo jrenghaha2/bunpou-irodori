@@ -45,13 +45,13 @@ export function QuizPanel({
   onClearQuizHistory,
 }: QuizPanelProps) {
   const bookChapterNumbers = useMemo<ChapterNumber[]>(
-    () => book.chapters.map(c => c.chapterNumber as ChapterNumber),
+    () => book.chapters.map(c => c.chapterNumber),
     [book.chapters]
   );
 
   const [phase, setPhase] = useState<QuizPhase>('setup');
   const [selectedChapters, setSelectedChapters] = useState<ChapterNumber[]>(
-    () => book.chapters.map(c => c.chapterNumber as ChapterNumber)
+    () => book.chapters.map(c => c.chapterNumber)
   );
   const [focus, setFocus] = useState<QuizFocus>('mixed');
   const [questionCount, setQuestionCount] = useState<QuizCountOption>(10);
@@ -67,7 +67,7 @@ export function QuizPanel({
   // Reset active run & chapter selection if book changes
   useEffect(() => {
     setPhase('setup');
-    setSelectedChapters(book.chapters.map(c => c.chapterNumber as ChapterNumber));
+    setSelectedChapters(book.chapters.map(c => c.chapterNumber));
     setQuestions([]);
     setRecords([]);
     setCurrentIdx(0);

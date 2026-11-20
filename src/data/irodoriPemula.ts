@@ -254,7 +254,7 @@ export const IRODORI_PEMULA_SPEC: RawBookSpec = {
           marugoto: 'S（普通体） S（丁寧体） (初中級 トピック4)',
           examples: [
             { jp: '{何|なに}、{飲|の}む？', id: 'Mau minum apa?' },
-            { jp: 'このお菓子、{食|た}べる？', id: 'Mau makan camilan ini?' },
+            { jp: 'このお{菓子|かし}、{食|た}べる？', id: 'Mau makan camilan ini?' },
             { jp: '{今日|きょう}、コンビニに{行|い}く？', id: 'Hari ini mau pergi ke minimarket?' },
           ],
         },
@@ -363,7 +363,7 @@ export const IRODORI_PEMULA_SPEC: RawBookSpec = {
           marugoto: '→「かつどう」 2. (入門 5課)',
           examples: [
             { jp: '{生|なま}ビール3つと、ウーロン{茶|ちゃ}1つ、お{願|ねが}いします。{枝豆|えだまめ}2つ、ください。', id: 'Tolong 3 bir draft dan 1 teh oolong. Minta 2 edamame.' },
-            { jp: '唐{揚|あ}げを2つと、ご{飯|はん}を1つお{願|ねが}いします。', id: 'Tolong 2 karaage dan 1 nasi.' },
+            { jp: '{唐揚|からあ}げを2つと、ご{飯|はん}を1つお{願|ねが}いします。', id: 'Tolong 2 karaage dan 1 nasi.' },
             { jp: 'おにぎり3つ、ください。', id: 'Minta 3 onigiri.' },
           ],
         },
@@ -917,7 +917,7 @@ export const IRODORI_PEMULA_SPEC: RawBookSpec = {
           examples: [
             { jp: 'ここは、どこですか？', id: 'Di sini di mana?' },
             { jp: 'すみません、ここは{北口|きたぐち}ですか？', id: 'Permisi, apakah di sini pintu keluar utara?' },
-            { jp: 'ここは3番{線|せん}のホームですか？', id: 'Apakah di sini peron jalur 3?' },
+            { jp: 'ここは3{番線|ばんせん}のホームですか？', id: 'Apakah di sini peron jalur 3?' },
           ],
         },
         {
@@ -1098,7 +1098,7 @@ export const IRODORI_PEMULA_SPEC: RawBookSpec = {
           formulas: ['この / その / あの + N (Harus selalu diikuti Kata Benda)'],
           functionText:
             'Kata tunjuk penjelas yang langsung menempel di depan kata benda: このN (N ini), そのN (N itu), あのN (N yang di sana).',
-          marugoto: '可能① NがV-（られ）ます',
+          marugoto: 'このN / そのN / あのN (入門 16課)',
           examples: [
             { jp: 'そのカレンダー、いくらですか？', id: 'Kalender itu harganya berapa?' },
             { jp: 'このジャケットを{見|み}せてください。', id: 'Tolong perlihatkan jaket ini.' },
@@ -1266,7 +1266,7 @@ export const IRODORI_PEMULA_SPEC: RawBookSpec = {
           examples: [
             { jp: '{雪|ゆき}が{見|み}たいです。あと、{温泉|おんせん}に{入|はい}りたいです。', id: 'Saya ingin melihat salju. Selain itu, saya ingin berendam di onsen.' },
             { jp: 'ラーメンを{食|た}べました。あと、お{土産|みやげ}も{買|か}いました。', id: 'Saya makan ramen. Lalu juga membeli oleh-oleh.' },
-            { jp: '{パスポート|ぱすぽーと}と{財布|さいふ}、あと、スマホを{持|も}ちます。', id: 'Saya membawa paspor, dompet, dan juga ponsel.' },
+            { jp: 'パスポートと{財布|さいふ}、あと、スマホを{持|も}ちます。', id: 'Saya membawa paspor, dompet, dan juga ponsel.' },
           ],
         },
         {

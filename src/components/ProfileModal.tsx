@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera, RotateCcw, Upload, X } from 'lucide-react';
 import { PRESET_AVATARS, compressAvatarFile, renderPresetKanjiAvatar } from '../utils/avatarImage';
 import { DISPLAY_NAME_MAX_LENGTH, isValidAvatarUrl } from '../utils/bunpouSync';
+import { Modal } from './Modal';
 
 interface ProfileModalProps {
   open: boolean;
@@ -30,59 +31,21 @@ export function ProfileModal({
   const [previewBroken, setPreviewBroken] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const modalRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Initialize form fields only when the modal transitions from closed -> open
   useEffect(() => {
-    if (!open) return;
-    setNameInput(initialName);
-    setAvatarInput(initialAvatarUrl);
-    setUrlInput(initialAvatarUrl.startsWith('https://') ? initialAvatarUrl : '');
-    setPreviewBroken(false);
-    setErrorMsg(null);
-    const frame = requestAnimationFrame(() => {
-      nameInputRef.current?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
+    if (open && !wasOpenRef.current) {
+      setNameInput(initialName);
+      setAvatarInput(initialAvatarUrl);
+      setUrlInput(initialAvatarUrl.startsWith('https://') ? initialAvatarUrl : '');
+      setPreviewBroken(false);
+      setErrorMsg(null);
+    }
+    wasOpenRef.current = open;
   }, [open, initialName, initialAvatarUrl]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab' || !modalRef.current) return;
-      const focusables = Array.from(
-        modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey) {
-        if (
-          document.activeElement === first ||
-          !modalRef.current.contains(document.activeElement)
-        ) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else if (
-        document.activeElement === last ||
-        !modalRef.current.contains(document.activeElement)
-      ) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -149,29 +112,31 @@ export function ProfileModal({
       setErrorMsg('Nama tampilan tidak boleh kosong.');
       return;
     }
-    if (urlInput.trim() && !urlInput.trim().startsWith('https://')) {
-      setErrorMsg('URL foto harus menggunakan protokol https://');
-      return;
+    const trimmedUrl = urlInput.trim();
+    if (trimmedUrl) {
+      if (!trimmedUrl.startsWith('https://')) {
+        setErrorMsg('URL foto harus menggunakan protokol https://');
+        return;
+      }
+      if (!isValidAvatarUrl(trimmedUrl)) {
+        setErrorMsg('URL foto tidak valid (pastikan tanpa spasi dan panjangnya wajar).');
+        return;
+      }
     }
-    const ok = await onSave(trimmedName, avatarInput);
+    const finalAvatar = trimmedUrl || avatarInput;
+    const ok = await onSave(trimmedName, finalAvatar);
     if (ok) onClose();
   };
 
   return (
-    <div
+    <Modal
+      open={open}
+      onClose={onClose}
       id="profileModalOverlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="profileModalTitle"
-      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4"
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      ariaLabelledBy="profileModalTitle"
+      initialFocusRef={nameInputRef}
+      panelClassName="overflow-hidden"
     >
-      <div
-        ref={modalRef}
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden"
-      >
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <div>
             <h2 id="profileModalTitle" className="text-base font-bold text-slate-900 dark:text-slate-50">
@@ -342,7 +307,6 @@ export function ProfileModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

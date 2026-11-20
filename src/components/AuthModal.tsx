@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, KeyRound, Mail, X } from 'lucide-react';
 import { FIREBASE_AUTH_PROVIDERS_URL } from '../firebase';
+import { Modal } from './Modal';
 
 export type AuthModalView = 'signin' | 'signup' | 'reset';
 
@@ -72,7 +73,6 @@ export function AuthModal({
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
 
-  const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -80,48 +80,7 @@ export function AuthModal({
     setView('signin');
     setPassword('');
     setShowPass(false);
-    const frame = requestAnimationFrame(() => {
-      closeBtnRef.current?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab' || !modalRef.current) return;
-      const focusables = Array.from(
-        modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey) {
-        if (
-          document.activeElement === first ||
-          !modalRef.current.contains(document.activeElement)
-        ) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else if (
-        document.activeElement === last ||
-        !modalRef.current.contains(document.activeElement)
-      ) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -142,20 +101,14 @@ export function AuthModal({
   };
 
   return (
-    <div
+    <Modal
+      open={open}
+      onClose={onClose}
       id="authModalOverlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="authModalTitle"
-      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4"
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      ariaLabelledBy="authModalTitle"
+      initialFocusRef={closeBtnRef}
+      panelClassName="overflow-hidden"
     >
-      <div
-        ref={modalRef}
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden"
-      >
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <div>
             <h2 id="authModalTitle" className="text-base font-bold text-slate-900 dark:text-slate-50">
@@ -390,7 +343,6 @@ export function AuthModal({
             </button>
           </form>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
