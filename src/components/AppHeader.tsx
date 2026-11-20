@@ -15,6 +15,7 @@ import {
   Sun,
   Users,
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export interface AppHeaderPreferences {
   showFurigana: boolean;
@@ -148,12 +149,7 @@ export function AppHeader({
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-2 lg:py-0 lg:h-16 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-3">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0 order-1">
-          <span
-            aria-hidden="true"
-            className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-teal-600 text-white font-jp font-bold text-base sm:text-lg shrink-0"
-          >
-            彩
-          </span>
+          <BrandLogo className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 drop-shadow-xs" />
           <div className="min-w-0 leading-tight">
             <span className="block font-bold text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap">
               Irodori Bunpou
