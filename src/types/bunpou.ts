@@ -2,6 +2,8 @@ export type BookId = 'introductory' | 'elementary1' | 'elementary2';
 
 export type AppTab = 'card' | 'list' | 'quiz' | 'guide';
 
+export type DeckStatusFilter = 'all' | 'unmastered' | 'hard';
+
 export type ChapterNumber =
   | 1
   | 2
@@ -23,10 +25,6 @@ export type ChapterNumber =
   | 18;
 
 export type ChapterFilter = 'all' | ChapterNumber;
-
-export const CHAPTER_NUMBERS: readonly ChapterNumber[] = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-] as const;
 
 export const BOOK_ORDER: readonly BookId[] = [
   'introductory',

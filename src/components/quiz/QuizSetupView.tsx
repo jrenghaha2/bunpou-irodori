@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Check, Play } from 'lucide-react';
 import type { BookData, ChapterNumber, QuizFocus } from '../../types/bunpou';
 import { formatChapterSelectionLabel } from '../../utils/quizGenerator';
 import {
   QUIZ_COUNT_OPTIONS,
+  QUIZ_COUNT_PRESETS,
   QUIZ_FOCUS_OPTIONS,
   type QuizCountOption,
 } from './quizHelpers';
@@ -17,7 +19,7 @@ interface QuizSetupViewProps {
   onSetChapters: (chapters: ChapterNumber[]) => void;
   onSelectFocus: (focus: QuizFocus) => void;
   onSelectCount: (count: QuizCountOption) => void;
-  onStartQuiz: () => void;
+  onStartQuiz: (overrideCount?: QuizCountOption) => void;
 }
 
 export function QuizSetupView({
@@ -32,13 +34,66 @@ export function QuizSetupView({
   onSelectCount,
   onStartQuiz,
 }: QuizSetupViewProps) {
+  const [manualDraft, setManualDraft] = useState<string>(() =>
+    questionCount === 'all' ? '' : String(questionCount)
+  );
+
+  useEffect(() => {
+    if (questionCount === 'all') {
+      setManualDraft('');
+    } else {
+      setManualDraft(String(questionCount));
+    }
+  }, [questionCount]);
+
   const allBookChapters = book.chapters.map(c => c.chapterNumber);
   const firstCh = allBookChapters[0] ?? 1;
   const lastCh = allBookChapters[allBookChapters.length - 1] ?? 18;
   const selectedSet = new Set(selectedChapters);
   const scopeLabel = formatChapterSelectionLabel(selectedChapters, allBookChapters.length);
+
+  const isCustomCount =
+    questionCount !== 'all' &&
+    !QUIZ_COUNT_PRESETS.includes(questionCount as (typeof QUIZ_COUNT_PRESETS)[number]);
+
   const effectiveCount =
-    questionCount === 'all' ? bankSize : Math.min(questionCount, bankSize);
+    bankSize <= 0
+      ? 0
+      : questionCount === 'all'
+        ? bankSize
+        : Math.max(1, Math.min(questionCount, bankSize));
+
+  const exceedsBank =
+    questionCount !== 'all' && bankSize > 0 && questionCount > bankSize;
+
+  const handleManualInputChange = (raw: string) => {
+    const digitsOnly = raw.replace(/[^0-9]/g, '').slice(0, 3);
+    setManualDraft(digitsOnly);
+    if (!digitsOnly) return;
+    const parsed = Number.parseInt(digitsOnly, 10);
+    if (Number.isFinite(parsed) && parsed >= 1) {
+      onSelectCount(parsed);
+    }
+  };
+
+  const commitManualInput = (): QuizCountOption => {
+    if (!manualDraft) {
+      if (questionCount !== 'all') {
+        setManualDraft(String(questionCount));
+      }
+      return questionCount;
+    }
+    const parsed = Number.parseInt(manualDraft, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      onSelectCount(1);
+      setManualDraft('1');
+      return 1;
+    }
+    const clamped = bankSize > 0 ? Math.min(parsed, bankSize) : parsed;
+    onSelectCount(clamped);
+    setManualDraft(String(clamped));
+    return clamped;
+  };
 
   const presets: { label: string; chapters: ChapterNumber[] }[] =
     firstCh === 3
@@ -160,7 +215,7 @@ export function QuizSetupView({
         </div>
       </div>
 
-      {/* Question Count Selector + Start CTA */}
+      {/* Question Count Selector + Manual Input + Start CTA */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="space-y-2">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -185,13 +240,57 @@ export function QuizSetupView({
                 </button>
               );
             })}
+
+            <div
+              className={`min-h-[38px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-colors ${
+                isCustomCount
+                  ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 dark:border-indigo-500'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus-within:border-indigo-500'
+              }`}
+            >
+              <label
+                htmlFor="inputManualQuizCount"
+                className="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap"
+              >
+                Manual
+              </label>
+              <input
+                id="inputManualQuizCount"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                value={manualDraft}
+                placeholder={bankSize > 0 ? `1–${bankSize}` : '0'}
+                aria-label="Jumlah soal manual"
+                onChange={e => handleManualInputChange(e.target.value)}
+                onBlur={() => {
+                  commitManualInput();
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && bankSize > 0) {
+                    e.preventDefault();
+                    const resolved = commitManualInput();
+                    onStartQuiz(resolved);
+                  }
+                }}
+                className="w-16 bg-transparent text-xs font-mono-num font-bold text-slate-900 dark:text-slate-100 text-center focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">soal</span>
+            </div>
           </div>
+
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Bank soal tersedia:{' '}
             <strong className="font-mono-num text-slate-800 dark:text-slate-200">
               {bankSize}
             </strong>{' '}
-            soal {effectiveCount > 0 ? `(akan dimulai ${effectiveCount} soal)` : ''}
+            soal{' '}
+            {exceedsBank
+              ? `(dibatasi ke ${bankSize} soal sesuai bank tersedia)`
+              : effectiveCount > 0
+                ? `(akan dimulai ${effectiveCount} soal)`
+                : ''}
           </p>
         </div>
 
@@ -199,7 +298,7 @@ export function QuizSetupView({
           type="button"
           id="btnStartQuiz"
           disabled={effectiveCount <= 0}
-          onClick={onStartQuiz}
+          onClick={() => onStartQuiz()}
           className="min-h-[48px] px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed shrink-0"
         >
           <Play className="w-4 h-4 fill-current" aria-hidden="true" />

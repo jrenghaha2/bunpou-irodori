@@ -7,12 +7,10 @@ import {
   Shuffle,
   Sparkles,
 } from 'lucide-react';
-import type { BunpouPattern } from '../types/bunpou';
+import type { BunpouPattern, DeckStatusFilter } from '../types/bunpou';
 import { AudioButton } from './AudioButton';
 import { FormulaDisplay } from './FormulaDisplay';
 import { JapaneseText } from './JapaneseText';
-
-export type DeckStatusFilter = 'all' | 'unmastered' | 'hard';
 
 interface FlashcardPanelProps {
   deck: BunpouPattern[];
@@ -162,6 +160,7 @@ export function FlashcardPanel({
               }
               onClick={onFlip}
               onKeyDown={e => {
+                if (e.target !== e.currentTarget) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   e.stopPropagation();

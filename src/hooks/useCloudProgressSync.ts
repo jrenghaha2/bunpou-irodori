@@ -1,41 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
-import { updateProfile, type User } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import {
-  OperationType,
-  db,
-  isFirestoreQuotaError,
-  logFirestoreError,
-} from '../firebase';
-import type {
-  AllBooksProgress,
-  AllBooksQuizHistory,
-  AppTab,
-  BookId,
-  BunpouPattern,
-  QuizSessionHistoryEntry,
-} from '../types/bunpou';
+import type { User } from 'firebase/auth';
+import { OperationType, isFirestoreQuotaError, logFirestoreError } from '../firebase';
+import { fetchBookProgressDoc, saveBookProgressDoc } from '../services/cloudSyncService';
+import type { AllBooksProgress, AppTab, BookId, BunpouPattern } from '../types/bunpou';
 import { BOOK_ORDER } from '../types/bunpou';
 import {
   BOOK_STORAGE_KEYS,
   areSetsEqual,
   createBookRecord,
-  isValidAvatarUrl,
   mergeProgressSets,
   normalizeDisjointSets,
-  sanitizeDisplayName,
   sanitizeIdArray,
 } from '../utils/bunpouSync';
-import {
-  MAX_QUIZ_HISTORY_ENTRIES,
-  createQuizSessionEntry,
-  decodeQuizSessionToken,
-  encodeQuizSessionToken,
-  loadQuizHistory,
-  mergeQuizHistories,
-  saveQuizHistory,
-  type RecordQuizSessionInput,
-} from '../utils/quizStats';
 import {
   clearAllStoredProgress,
   commitScopedProgressTransaction,
@@ -43,17 +19,15 @@ import {
   safeLoadSet,
   setStoredOwnerUid,
 } from '../utils/storage';
+import { useQuizHistorySync } from './useQuizHistorySync';
 import type { ShowToastFn } from './useToast';
+import { useUserProfile } from './useUserProfile';
 
 const PROGRESS_WRITE_DEBOUNCE_MS = 250;
 const SYNC_ERROR_TOAST_COOLDOWN_MS = 10_000;
 
 function createEmptyAllBooksProgress(): AllBooksProgress {
   return createBookRecord(() => ({ mastered: new Set<string>(), hard: new Set<string>() }));
-}
-
-function createEmptyAllBooksQuizHistory(): AllBooksQuizHistory {
-  return createBookRecord(() => [] as QuizSessionHistoryEntry[]);
 }
 
 interface UseCloudProgressSyncOptions {
@@ -82,47 +56,30 @@ export function useCloudProgressSync({
   showToast,
 }: UseCloudProgressSyncOptions) {
   const [booksProgress, setBooksProgress] = useState<AllBooksProgress>(createEmptyAllBooksProgress);
-  const [quizHistories, setQuizHistories] = useState<AllBooksQuizHistory>(
-    createEmptyAllBooksQuizHistory
-  );
-
   const [syncing, setSyncing] = useState(false);
-  const [quizHistorySyncing, setQuizHistorySyncing] = useState(false);
   const [fatalError, setFatalError] = useState<Error | null>(null);
   const [offlineFallback, setOfflineFallback] = useState(false);
-
-  const [customDisplayName, setCustomDisplayName] = useState('');
-  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [profileSaving, setProfileSaving] = useState(false);
 
   const offlineFallbackRef = useRef(false);
   offlineFallbackRef.current = offlineFallback;
 
-  const userProfileDocExistsRef = useRef(false);
-  const profileInitPromiseRef = useRef<{ uid: string; promise: Promise<boolean> } | null>(null);
+  const activeUidRef = useRef<string | null>(user?.uid ?? null);
+  activeUidRef.current = user?.uid ?? null;
+
+  const syncEpochRef = useRef(0);
+  const localMutationVersionRef = useRef<Record<BookId, number>>(createBookRecord(() => 0));
 
   const progressDocExistsRef = useRef<Record<BookId, boolean>>(createBookRecord(() => false));
-  const quizDocExistsRef = useRef<Record<BookId, boolean>>(createBookRecord(() => false));
-  const loadedQuizCloudBooksRef = useRef<Set<string>>(new Set());
-
-  // Per-book serialized write queues and debounce timers to prevent parallel setDoc races
   const progressWriteQueuesRef = useRef<Record<BookId, Promise<void>>>(
     createBookRecord(() => Promise.resolve())
   );
   const progressWriteTimersRef = useRef<Record<BookId, number | null>>(
     createBookRecord(() => null)
   );
-  const quizWriteQueuesRef = useRef<Record<BookId, Promise<void>>>(
-    createBookRecord(() => Promise.resolve())
-  );
   const lastSyncWarnToastAtRef = useRef(0);
 
   const booksProgressRef = useRef(booksProgress);
   booksProgressRef.current = booksProgress;
-
-  const quizHistoriesRef = useRef(quizHistories);
-  quizHistoriesRef.current = quizHistories;
 
   const clearPendingWriteTimers = useCallback(() => {
     for (const bookId of BOOK_ORDER) {
@@ -166,6 +123,26 @@ export function useCloudProgressSync({
     [notifyCloudWriteWarning]
   );
 
+  const profile = useUserProfile({
+    user,
+    offlineFallbackRef,
+    handleQuotaOrLog,
+    showToast,
+  });
+
+  const quizSync = useQuizHistorySync({
+    user,
+    activeTab,
+    activeBookId,
+    datasetReady,
+    patternById,
+    offlineFallback,
+    offlineFallbackRef,
+    ensureUserProfileDoc: profile.ensureUserProfileDoc,
+    handleQuotaOrLog,
+    showToast,
+  });
+
   const enableOfflineFallback = useCallback(() => {
     offlineFallbackRef.current = true;
     setOfflineFallback(true);
@@ -188,68 +165,10 @@ export function useCloudProgressSync({
         validIdsByBook[bookId]
       )
     );
+    booksProgressRef.current = loadedProgress;
     setBooksProgress(loadedProgress);
-    setQuizHistories(createBookRecord(bookId => loadQuizHistory(bookId)));
-  }, [datasetReady, validIdsByBook]);
-
-  // Deduplicated profile doc initialization so parallel sync & quiz-history loads never race
-  const ensureUserProfileDoc = useCallback(
-    async (u: User): Promise<boolean> => {
-      if (offlineFallbackRef.current) return false;
-      if (userProfileDocExistsRef.current) return true;
-      if (profileInitPromiseRef.current?.uid === u.uid) {
-        return profileInitPromiseRef.current.promise;
-      }
-
-      const path = `users/${u.uid}`;
-      const ref = doc(db, 'users', u.uid);
-
-      const initPromise = (async () => {
-        try {
-          const snap = await getDoc(ref);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (typeof data.displayName === 'string') setCustomDisplayName(data.displayName);
-            if (typeof data.avatarUrl === 'string') setCustomAvatarUrl(data.avatarUrl);
-            userProfileDocExistsRef.current = true;
-            return true;
-          }
-          if (!u.emailVerified) return false;
-
-          const defaultName = sanitizeDisplayName(
-            u.displayName || u.email?.split('@')[0] || 'Pembelajar'
-          );
-          const defaultAvatar =
-            u.photoURL && isValidAvatarUrl(u.photoURL) ? u.photoURL : '';
-
-          const payload: Record<string, unknown> = {
-            uid: u.uid,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          };
-          if (defaultName) payload.displayName = defaultName;
-          if (defaultAvatar) payload.avatarUrl = defaultAvatar;
-
-          await setDoc(ref, payload);
-          setCustomDisplayName(defaultName);
-          setCustomAvatarUrl(defaultAvatar);
-          userProfileDocExistsRef.current = true;
-          return true;
-        } catch (err) {
-          handleQuotaOrLog(err, OperationType.WRITE, path, false);
-          return false;
-        } finally {
-          if (profileInitPromiseRef.current?.uid === u.uid) {
-            profileInitPromiseRef.current = null;
-          }
-        }
-      })();
-
-      profileInitPromiseRef.current = { uid: u.uid, promise: initPromise };
-      return initPromise;
-    },
-    [handleQuotaOrLog]
-  );
+    quizSync.hydrateLocalQuizHistories();
+  }, [datasetReady, validIdsByBook, quizSync.hydrateLocalQuizHistories]);
 
   const enqueueBookProgressWrite = useCallback(
     (
@@ -259,36 +178,26 @@ export function useCloudProgressSync({
       notifyOnFailure: boolean
     ): Promise<void> => {
       const task = progressWriteQueuesRef.current[bookId].then(async () => {
-        if (!u.emailVerified || offlineFallbackRef.current) return;
-        const parentOk = await ensureUserProfileDoc(u);
-        if (!parentOk) return;
+        if (!u.emailVerified || offlineFallbackRef.current || activeUidRef.current !== u.uid) {
+          return;
+        }
+        const parentOk = await profile.ensureUserProfileDoc(u);
+        if (!parentOk || activeUidRef.current !== u.uid) return;
 
         const path = `users/${u.uid}/bunpouProgress/${bookId}`;
-        const ref = doc(db, 'users', u.uid, 'bunpouProgress', bookId);
         const validIds = validIdsByBook[bookId];
         const snap = getSnapshot();
         const clean = normalizeDisjointSets(snap.mastered, snap.hard, validIds);
-        const mArr = [...clean.mastered];
-        const hArr = [...clean.hard];
 
         try {
-          if (progressDocExistsRef.current[bookId]) {
-            await updateDoc(ref, {
-              mastered: mArr,
-              hard: hArr,
-              updatedAt: serverTimestamp(),
-            });
-          } else {
-            await setDoc(ref, {
-              uid: u.uid,
-              bookId,
-              mastered: mArr,
-              hard: hArr,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            });
-            progressDocExistsRef.current[bookId] = true;
-          }
+          await saveBookProgressDoc(
+            u.uid,
+            bookId,
+            [...clean.mastered],
+            [...clean.hard],
+            progressDocExistsRef.current[bookId]
+          );
+          progressDocExistsRef.current[bookId] = true;
         } catch (err) {
           handleQuotaOrLog(err, OperationType.WRITE, path, notifyOnFailure);
         }
@@ -297,7 +206,7 @@ export function useCloudProgressSync({
       progressWriteQueuesRef.current[bookId] = task.catch(() => undefined);
       return task;
     },
-    [ensureUserProfileDoc, validIdsByBook, handleQuotaOrLog]
+    [profile.ensureUserProfileDoc, validIdsByBook, handleQuotaOrLog]
   );
 
   const scheduleBookProgressWrite = useCallback(
@@ -309,132 +218,155 @@ export function useCloudProgressSync({
       }
       progressWriteTimersRef.current[bookId] = window.setTimeout(() => {
         progressWriteTimersRef.current[bookId] = null;
+        if (activeUidRef.current !== u.uid) return;
         void enqueueBookProgressWrite(u, bookId, () => booksProgressRef.current[bookId], true);
       }, PROGRESS_WRITE_DEBOUNCE_MS);
     },
     [enqueueBookProgressWrite]
   );
 
-  const enqueueQuizHistoryWrite = useCallback(
-    (
-      u: User,
-      bookId: BookId,
-      entries: readonly QuizSessionHistoryEntry[],
-      notifyOnFailure: boolean
-    ): Promise<void> => {
-      const task = quizWriteQueuesRef.current[bookId].then(async () => {
-        if (!u.emailVerified || offlineFallbackRef.current) return;
-        const parentOk = await ensureUserProfileDoc(u);
-        if (!parentOk) return;
-
-        const path = `users/${u.uid}/quizHistory/${bookId}`;
-        const ref = doc(db, 'users', u.uid, 'quizHistory', bookId);
-        const uniqueTokens = Array.from(
-          new Set(entries.slice(0, MAX_QUIZ_HISTORY_ENTRIES).map(encodeQuizSessionToken))
-        );
-
-        try {
-          if (quizDocExistsRef.current[bookId]) {
-            await updateDoc(ref, {
-              sessions: uniqueTokens,
-              updatedAt: serverTimestamp(),
-            });
-          } else {
-            await setDoc(ref, {
-              uid: u.uid,
-              bookId,
-              sessions: uniqueTokens,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            });
-            quizDocExistsRef.current[bookId] = true;
-          }
-        } catch (err) {
-          handleQuotaOrLog(err, OperationType.WRITE, path, notifyOnFailure);
-        }
-      });
-
-      quizWriteQueuesRef.current[bookId] = task.catch(() => undefined);
-      return task;
-    },
-    [ensureUserProfileDoc, handleQuotaOrLog]
-  );
-
   const syncAllFromCloud = useCallback(
     async (u: User, announce: boolean) => {
       if (offlineFallbackRef.current) return;
+      const myEpoch = ++syncEpochRef.current;
+      const isCancelled = () =>
+        syncEpochRef.current !== myEpoch ||
+        activeUidRef.current !== u.uid ||
+        offlineFallbackRef.current;
+
       setSyncing(true);
       try {
         const previousOwner = getStoredOwnerUid();
         const isSwitchingUser = Boolean(previousOwner && previousOwner !== u.uid);
 
         if (isSwitchingUser) {
+          clearPendingWriteTimers();
           clearAllStoredProgress();
-          setBooksProgress(createEmptyAllBooksProgress());
-          setQuizHistories(createEmptyAllBooksQuizHistory());
+          const empty = createEmptyAllBooksProgress();
+          booksProgressRef.current = empty;
+          setBooksProgress(empty);
+          quizSync.resetQuizHistories();
+          profile.resetProfileState(true);
+          progressDocExistsRef.current = createBookRecord(() => false);
         }
         setStoredOwnerUid(u.uid);
 
-        const parentOk = await ensureUserProfileDoc(u);
-        if (!parentOk) return;
+        const parentOk = await profile.ensureUserProfileDoc(u);
+        if (!parentOk || isCancelled()) return;
 
-        const nextBooks: AllBooksProgress = createEmptyAllBooksProgress();
+        const startMutationVersions = createBookRecord(
+          bookId => localMutationVersionRef.current[bookId]
+        );
 
-        for (const bookId of BOOK_ORDER) {
-          const validIds = validIdsByBook[bookId];
-          const keys = BOOK_STORAGE_KEYS[bookId];
-          const localM = isSwitchingUser
-            ? new Set<string>()
-            : safeLoadSet(keys.masteredKey, validIds);
-          const localH = isSwitchingUser
-            ? new Set<string>()
-            : safeLoadSet(keys.hardKey, validIds);
+        let hitQuota = false;
 
-          const path = `users/${u.uid}/bunpouProgress/${bookId}`;
-          const ref = doc(db, 'users', u.uid, 'bunpouProgress', bookId);
-          try {
-            const snap = await getDoc(ref);
-            if (snap.exists()) {
-              progressDocExistsRef.current[bookId] = true;
-              const data = snap.data();
-              const cloudM = new Set(sanitizeIdArray(data.mastered, validIds));
-              const cloudH = new Set(sanitizeIdArray(data.hard, validIds));
-              const merged = mergeProgressSets(localM, localH, cloudM, cloudH, validIds);
-              nextBooks[bookId] = merged;
-              commitScopedProgressTransaction(
-                keys.masteredKey,
-                keys.hardKey,
-                merged.mastered,
-                merged.hard
-              );
+        const results = await Promise.all(
+          BOOK_ORDER.map(async bookId => {
+            const validIds = validIdsByBook[bookId];
+            const keys = BOOK_STORAGE_KEYS[bookId];
+            const localM = isSwitchingUser
+              ? new Set<string>()
+              : safeLoadSet(keys.masteredKey, validIds);
+            const localH = isSwitchingUser
+              ? new Set<string>()
+              : safeLoadSet(keys.hardKey, validIds);
 
-              if (
-                u.emailVerified &&
-                (!areSetsEqual(merged.mastered, cloudM) || !areSetsEqual(merged.hard, cloudH))
-              ) {
-                await enqueueBookProgressWrite(u, bookId, () => merged, false);
+            const path = `users/${u.uid}/bunpouProgress/${bookId}`;
+            try {
+              const snap = await fetchBookProgressDoc(u.uid, bookId);
+              if (isCancelled()) return null;
+
+              const mutatedMidSync =
+                localMutationVersionRef.current[bookId] !== startMutationVersions[bookId];
+              const baseLocalM = mutatedMidSync ? booksProgressRef.current[bookId].mastered : localM;
+              const baseLocalH = mutatedMidSync ? booksProgressRef.current[bookId].hard : localH;
+
+              if (snap.exists) {
+                progressDocExistsRef.current[bookId] = true;
+                const cloudM = new Set(sanitizeIdArray(snap.mastered, validIds));
+                const cloudH = new Set(sanitizeIdArray(snap.hard, validIds));
+                const merged = mergeProgressSets(baseLocalM, baseLocalH, cloudM, cloudH, validIds);
+
+                commitScopedProgressTransaction(
+                  keys.masteredKey,
+                  keys.hardKey,
+                  merged.mastered,
+                  merged.hard
+                );
+
+                if (
+                  u.emailVerified &&
+                  !mutatedMidSync &&
+                  (!areSetsEqual(merged.mastered, cloudM) || !areSetsEqual(merged.hard, cloudH))
+                ) {
+                  await enqueueBookProgressWrite(u, bookId, () => merged, false);
+                }
+                return { bookId, progress: merged, cloudM, cloudH };
               }
-            } else {
+
               progressDocExistsRef.current[bookId] = false;
-              const cleanLocal = normalizeDisjointSets(localM, localH, validIds);
-              nextBooks[bookId] = cleanLocal;
+              const cleanLocal = normalizeDisjointSets(baseLocalM, baseLocalH, validIds);
               commitScopedProgressTransaction(
                 keys.masteredKey,
                 keys.hardKey,
                 cleanLocal.mastered,
                 cleanLocal.hard
               );
-              if (u.emailVerified && (cleanLocal.mastered.size > 0 || cleanLocal.hard.size > 0)) {
+              if (
+                u.emailVerified &&
+                !mutatedMidSync &&
+                (cleanLocal.mastered.size > 0 || cleanLocal.hard.size > 0)
+              ) {
                 await enqueueBookProgressWrite(u, bookId, () => cleanLocal, false);
               }
+              return { bookId, progress: cleanLocal, cloudM: null, cloudH: null };
+            } catch (err) {
+              const isQuota = handleQuotaOrLog(err, OperationType.GET, path, false);
+              if (isQuota) {
+                hitQuota = true;
+                return null;
+              }
+              const fallbackLocal = normalizeDisjointSets(localM, localH, validIds);
+              return { bookId, progress: fallbackLocal, cloudM: null, cloudH: null };
             }
-          } catch (err) {
-            const isQuota = handleQuotaOrLog(err, OperationType.GET, path, false);
-            if (isQuota) return;
-            nextBooks[bookId] = normalizeDisjointSets(localM, localH, validIds);
+          })
+        );
+
+        if (hitQuota || isCancelled()) return;
+
+        // Re-check local mutation versions after Promise.all completes so user clicks
+        // on Book A while Books B/C were still fetching are never overwritten by stale snapshots.
+        const nextBooks: AllBooksProgress = createEmptyAllBooksProgress();
+        for (const item of results) {
+          if (!item) continue;
+          const { bookId, progress, cloudM, cloudH } = item;
+          if (localMutationVersionRef.current[bookId] !== startMutationVersions[bookId]) {
+            const latestLocal = booksProgressRef.current[bookId];
+            const validIds = validIdsByBook[bookId];
+            const keys = BOOK_STORAGE_KEYS[bookId];
+            const reMerged =
+              cloudM && cloudH
+                ? mergeProgressSets(latestLocal.mastered, latestLocal.hard, cloudM, cloudH, validIds)
+                : normalizeDisjointSets(latestLocal.mastered, latestLocal.hard, validIds);
+            commitScopedProgressTransaction(
+              keys.masteredKey,
+              keys.hardKey,
+              reMerged.mastered,
+              reMerged.hard
+            );
+            nextBooks[bookId] = reMerged;
+            if (
+              u.emailVerified &&
+              (!areSetsEqual(reMerged.mastered, latestLocal.mastered) ||
+                !areSetsEqual(reMerged.hard, latestLocal.hard))
+            ) {
+              scheduleBookProgressWrite(u, bookId);
+            }
+          } else {
+            nextBooks[bookId] = progress;
           }
         }
-
+        booksProgressRef.current = nextBooks;
         setBooksProgress(nextBooks);
 
         if (announce) {
@@ -449,24 +381,33 @@ export function useCloudProgressSync({
           );
         }
       } finally {
-        setSyncing(false);
+        if (syncEpochRef.current === myEpoch) {
+          setSyncing(false);
+        }
       }
     },
-    [ensureUserProfileDoc, validIdsByBook, enqueueBookProgressWrite, handleQuotaOrLog, showToast]
+    [
+      clearPendingWriteTimers,
+      quizSync.resetQuizHistories,
+      profile.resetProfileState,
+      profile.ensureUserProfileDoc,
+      validIdsByBook,
+      enqueueBookProgressWrite,
+      scheduleBookProgressWrite,
+      handleQuotaOrLog,
+      showToast,
+    ]
   );
 
   // Trigger initial sync when auth state settles & dataset is ready
   useEffect(() => {
     if (!authReady || !datasetReady) return;
     if (!user) {
+      syncEpochRef.current += 1;
       clearPendingWriteTimers();
-      userProfileDocExistsRef.current = false;
-      profileInitPromiseRef.current = null;
+      profile.resetProfileState(true);
+      quizSync.clearQuizCloudCache(true);
       progressDocExistsRef.current = createBookRecord(() => false);
-      quizDocExistsRef.current = createBookRecord(() => false);
-      loadedQuizCloudBooksRef.current.clear();
-      setCustomDisplayName('');
-      setCustomAvatarUrl('');
       setOfflineFallback(false);
       return;
     }
@@ -482,77 +423,8 @@ export function useCloudProgressSync({
     justSignedInRef,
     syncAllFromCloud,
     clearPendingWriteTimers,
-  ]);
-
-  // Lazy-load quiz history from cloud only when user opens Quiz tab for a book
-  useEffect(() => {
-    if (!user || !user.emailVerified || !datasetReady || activeTab !== 'quiz') return;
-    if (offlineFallbackRef.current) return;
-    const cacheKey = `${user.uid}:${activeBookId}`;
-    if (loadedQuizCloudBooksRef.current.has(cacheKey)) return;
-
-    let cancelled = false;
-    const run = async () => {
-      setQuizHistorySyncing(true);
-      try {
-        const parentOk = await ensureUserProfileDoc(user);
-        if (!parentOk || cancelled) return;
-
-        const path = `users/${user.uid}/quizHistory/${activeBookId}`;
-        const ref = doc(db, 'users', user.uid, 'quizHistory', activeBookId);
-        const snap = await getDoc(ref);
-        if (cancelled) return;
-
-        const localList = loadQuizHistory(activeBookId);
-        if (snap.exists()) {
-          quizDocExistsRef.current[activeBookId] = true;
-          const data = snap.data();
-          const rawTokens = Array.isArray(data.sessions) ? data.sessions : [];
-          const decoded: QuizSessionHistoryEntry[] = [];
-          for (const tok of rawTokens) {
-            if (typeof tok === 'string') {
-              const entry = decodeQuizSessionToken(tok, activeBookId, patternById);
-              if (entry) decoded.push(entry);
-            }
-          }
-          const merged = mergeQuizHistories(localList, decoded);
-          saveQuizHistory(activeBookId, merged);
-          setQuizHistories(prev => ({ ...prev, [activeBookId]: merged }));
-          if (merged.length > decoded.length) {
-            await enqueueQuizHistoryWrite(user, activeBookId, merged, false);
-          }
-        } else {
-          quizDocExistsRef.current[activeBookId] = false;
-          if (localList.length > 0) {
-            await enqueueQuizHistoryWrite(user, activeBookId, localList, false);
-          }
-        }
-        loadedQuizCloudBooksRef.current.add(cacheKey);
-      } catch (err) {
-        handleQuotaOrLog(
-          err,
-          OperationType.GET,
-          `users/${user.uid}/quizHistory/${activeBookId}`,
-          false
-        );
-      } finally {
-        if (!cancelled) setQuizHistorySyncing(false);
-      }
-    };
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    user,
-    datasetReady,
-    activeTab,
-    activeBookId,
-    ensureUserProfileDoc,
-    patternById,
-    enqueueQuizHistoryWrite,
-    handleQuotaOrLog,
+    profile.resetProfileState,
+    quizSync.clearQuizCloudCache,
   ]);
 
   const applyProgressChange = useCallback(
@@ -572,6 +444,7 @@ export function useCloudProgressSync({
         return false;
       }
 
+      localMutationVersionRef.current[bId] += 1;
       const nextState = {
         ...booksProgressRef.current,
         [bId]: clean,
@@ -587,120 +460,45 @@ export function useCloudProgressSync({
     [activeBookId, validIdsByBook, user, scheduleBookProgressWrite, showToast]
   );
 
-  const handleRecordQuizSession = useCallback(
-    (input: RecordQuizSessionInput) => {
-      const entry = createQuizSessionEntry(input);
-      const prev = quizHistoriesRef.current[input.bookId] ?? [];
-      const next = [entry, ...prev].slice(0, MAX_QUIZ_HISTORY_ENTRIES);
-      saveQuizHistory(input.bookId, next);
-      setQuizHistories(curr => ({ ...curr, [input.bookId]: next }));
-
-      if (user && user.emailVerified && !offlineFallbackRef.current) {
-        void enqueueQuizHistoryWrite(user, input.bookId, next, true);
-      }
-    },
-    [user, enqueueQuizHistoryWrite]
-  );
-
-  const handleClearQuizHistory = useCallback(
-    (bookId: BookId) => {
-      saveQuizHistory(bookId, []);
-      setQuizHistories(curr => ({ ...curr, [bookId]: [] }));
-      if (user && user.emailVerified && !offlineFallbackRef.current) {
-        void enqueueQuizHistoryWrite(user, bookId, [], true);
-      }
-      showToast(
-        'info',
-        'Riwayat Kuis Dihapus',
-        `Riwayat skor ${BOOK_STORAGE_KEYS[bookId].label} telah dikosongkan.`
-      );
-    },
-    [user, enqueueQuizHistoryWrite, showToast]
-  );
-
   const handleManualSync = useCallback(async () => {
     if (!user || !user.emailVerified) return;
     offlineFallbackRef.current = false;
     setOfflineFallback(false);
-    loadedQuizCloudBooksRef.current.clear();
+    quizSync.triggerQuizHistoryResync();
     await syncAllFromCloud(user, true);
-  }, [user, syncAllFromCloud]);
-
-  const handleSaveProfile = useCallback(
-    async (displayName: string, avatarUrl: string): Promise<boolean> => {
-      if (!user) return false;
-      const cleanName = sanitizeDisplayName(displayName);
-      if (!cleanName) return false;
-      if (!isValidAvatarUrl(avatarUrl)) {
-        showToast('error', 'URL Foto Tidak Valid', 'Gunakan gambar unggahan atau tautan https://.');
-        return false;
-      }
-
-      setProfileSaving(true);
-      try {
-        await updateProfile(user, { displayName: cleanName });
-        if (user.emailVerified && !offlineFallbackRef.current) {
-          const parentOk = await ensureUserProfileDoc(user);
-          if (parentOk) {
-            const ref = doc(db, 'users', user.uid);
-            await updateDoc(ref, {
-              displayName: cleanName,
-              avatarUrl,
-              updatedAt: serverTimestamp(),
-            });
-          }
-        }
-        setCustomDisplayName(cleanName);
-        setCustomAvatarUrl(avatarUrl);
-        showToast('success', 'Profil Diperbarui', 'Nama dan foto profil Anda telah disimpan.');
-        return true;
-      } catch (err) {
-        showToast(
-          'error',
-          'Gagal Memperbarui Profil',
-          err instanceof Error ? err.message : 'Tidak dapat menyimpan profil saat ini.'
-        );
-        return false;
-      } finally {
-        setProfileSaving(false);
-      }
-    },
-    [user, ensureUserProfileDoc, showToast]
-  );
+  }, [user, quizSync.triggerQuizHistoryResync, syncAllFromCloud]);
 
   const resetCloudAndLocalProgress = useCallback(() => {
+    syncEpochRef.current += 1;
     clearPendingWriteTimers();
     clearAllStoredProgress();
     const empty = createEmptyAllBooksProgress();
     booksProgressRef.current = empty;
     setBooksProgress(empty);
-    setQuizHistories(createEmptyAllBooksQuizHistory());
-    userProfileDocExistsRef.current = false;
-    profileInitPromiseRef.current = null;
+    profile.resetProfileState(false);
+    quizSync.resetQuizHistories();
     progressDocExistsRef.current = createBookRecord(() => false);
-    quizDocExistsRef.current = createBookRecord(() => false);
-    loadedQuizCloudBooksRef.current.clear();
     return { emptyM: new Set<string>(), emptyH: new Set<string>() };
-  }, [clearPendingWriteTimers]);
+  }, [clearPendingWriteTimers, profile.resetProfileState, quizSync.resetQuizHistories]);
 
   return {
     booksProgress,
-    quizHistories,
+    quizHistories: quizSync.quizHistories,
     syncing,
-    quizHistorySyncing,
+    quizHistorySyncing: quizSync.quizHistorySyncing,
     fatalError,
     offlineFallback,
     enableOfflineFallback,
-    customDisplayName,
-    customAvatarUrl,
-    profileModalOpen,
-    setProfileModalOpen,
-    profileSaving,
+    customDisplayName: profile.customDisplayName,
+    customAvatarUrl: profile.customAvatarUrl,
+    profileModalOpen: profile.profileModalOpen,
+    setProfileModalOpen: profile.setProfileModalOpen,
+    profileSaving: profile.profileSaving,
     applyProgressChange,
-    handleRecordQuizSession,
-    handleClearQuizHistory,
+    handleRecordQuizSession: quizSync.handleRecordQuizSession,
+    handleClearQuizHistory: quizSync.handleClearQuizHistory,
     handleManualSync,
-    handleSaveProfile,
+    handleSaveProfile: profile.handleSaveProfile,
     resetCloudAndLocalProgress,
   };
 }

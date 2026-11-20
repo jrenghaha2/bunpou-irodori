@@ -33,10 +33,14 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            const normalized = id.replace(/\\/g, '/');
+            if (
+              normalized.includes('node_modules/firebase') ||
+              normalized.includes('node_modules/@firebase')
+            ) {
               return 'firebase-vendor';
             }
-            if (id.includes('/src/data/irodori')) {
+            if (normalized.includes('/src/data/irodori')) {
               return 'irodori-data';
             }
             return undefined;

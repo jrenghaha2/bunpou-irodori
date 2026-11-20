@@ -1,6 +1,8 @@
 import type { QuizFocus, QuizQuestionType } from '../../types/bunpou';
 
-export type QuizCountOption = 5 | 10 | 20 | 'all';
+export type QuizCountOption = number | 'all';
+
+export const QUIZ_COUNT_PRESETS = [5, 10, 20] as const;
 
 export const QUIZ_COUNT_OPTIONS: readonly { value: QuizCountOption; label: string }[] = [
   { value: 5, label: '5 Soal' },

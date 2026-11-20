@@ -38,10 +38,6 @@ export function useAuthActions({ showToast }: UseAuthActionsOptions) {
 
   const justSignedInRef = useRef(false);
 
-  const bumpAuthVersion = useCallback(() => {
-    setAuthVersion(v => v + 1);
-  }, []);
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser);
@@ -268,7 +264,6 @@ export function useAuthActions({ showToast }: UseAuthActionsOptions) {
     authInfoText,
     authConsoleHint,
     justSignedInRef,
-    bumpAuthVersion,
     clearAuthNotices,
     handleOpenAuthModal,
     handleGoogleLogin,

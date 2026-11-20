@@ -298,3 +298,48 @@ test('progress sets normalize disjointly and merge cloud + local without mastere
   assert.ok(!merged.hard.has(p2));
   assert.ok(merged.hard.has(p3));
 });
+
+test('Modal focus effect depends only on [open], Flashcard Space shortcut excludes buttons/links, and cloud sync guards races', () => {
+  const modalSrc = fs.readFileSync(path.resolve(process.cwd(), 'src/components/Modal.tsx'), 'utf8');
+  assert.match(modalSrc, /onCloseRef\.current = onClose;/);
+  assert.match(modalSrc, /\}, \[open\]\);/);
+
+  const deckSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/hooks/useFlashcardDeck.ts'),
+    'utf8'
+  );
+  assert.match(deckSrc, /button, a, summary/);
+  assert.match(deckSrc, /\[role="button"\]/);
+
+  const syncSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/hooks/useCloudProgressSync.ts'),
+    'utf8'
+  );
+  assert.match(syncSrc, /if \(isSwitchingUser\)\s*\{\s*clearPendingWriteTimers\(\);/);
+  assert.match(syncSrc, /Promise\.all\(/);
+  assert.match(syncSrc, /syncEpochRef\.current !== myEpoch/);
+  assert.match(syncSrc, /triggerQuizHistoryResync/);
+  assert.match(syncSrc, /const latestLocal = booksProgressRef\.current\[bookId\];/);
+
+  const quizSyncSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/hooks/useQuizHistorySync.ts'),
+    'utf8'
+  );
+  assert.match(quizSyncSrc, /syncNonce/);
+
+  const panelSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/components/FlashcardPanel.tsx'),
+    'utf8'
+  );
+  assert.match(panelSrc, /if \(e\.target !== e\.currentTarget\) return;/);
+
+  const setupSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/components/quiz/QuizSetupView.tsx'),
+    'utf8'
+  );
+  assert.match(setupSrc, /id="inputManualQuizCount"/);
+  assert.match(setupSrc, /type="text"/);
+  assert.match(setupSrc, /onStartQuiz\(resolved\)/);
+  assert.match(syncSrc, /scheduleBookProgressWrite\(u, bookId\);/);
+});
+

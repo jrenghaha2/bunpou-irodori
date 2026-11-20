@@ -15,16 +15,14 @@ import {
   Users,
 } from 'lucide-react';
 
-interface AppHeaderProps {
-  bookShortTitle: string;
+export interface AppHeaderPreferences {
   showFurigana: boolean;
   onToggleFurigana: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
-  masteredCount: number;
-  totalCount: number;
-  restoreBtnRef: RefObject<HTMLButtonElement | null>;
-  fileInputRef: RefObject<HTMLInputElement | null>;
+}
+
+export interface AppHeaderAccount {
   user: User | null;
   displayName: string;
   avatarUrl: string;
@@ -37,9 +35,23 @@ interface AppHeaderProps {
   onResendVerification: () => void;
   onRefreshVerification: () => void;
   onSignOut: () => void;
+}
+
+export interface AppHeaderBackup {
+  restoreBtnRef: RefObject<HTMLButtonElement | null>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   onExport: () => void;
   onTriggerImport: () => void;
   onFileSelected: (file: File) => void;
+}
+
+interface AppHeaderProps {
+  bookShortTitle: string;
+  masteredCount: number;
+  totalCount: number;
+  preferences: AppHeaderPreferences;
+  account: AppHeaderAccount;
+  backup: AppHeaderBackup;
 }
 
 function getProviderLabel(user: User): string {
@@ -52,35 +64,34 @@ function getProviderLabel(user: User): string {
 
 export function AppHeader({
   bookShortTitle,
-  showFurigana,
-  onToggleFurigana,
-  isDark,
-  onToggleTheme,
   masteredCount,
   totalCount,
-  restoreBtnRef,
-  fileInputRef,
-  user,
-  displayName,
-  avatarUrl,
-  authReady,
-  authBusy,
-  syncing,
-  onOpenAuthModal,
-  onOpenProfileModal,
-  onManualSync,
-  onResendVerification,
-  onRefreshVerification,
-  onSignOut,
-  onExport,
-  onTriggerImport,
-  onFileSelected,
+  preferences,
+  account,
+  backup,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [avatarBroken, setAvatarBroken] = useState(false);
 
   const menuWrapperRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
+
+  const { showFurigana, onToggleFurigana, isDark, onToggleTheme } = preferences;
+  const {
+    user,
+    displayName,
+    avatarUrl,
+    authReady,
+    authBusy,
+    syncing,
+    onOpenAuthModal,
+    onOpenProfileModal,
+    onManualSync,
+    onResendVerification,
+    onRefreshVerification,
+    onSignOut,
+  } = account;
+  const { restoreBtnRef, fileInputRef, onExport, onTriggerImport, onFileSelected } = backup;
 
   useEffect(() => {
     setAvatarBroken(false);

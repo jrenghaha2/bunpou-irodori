@@ -27,13 +27,20 @@ export function Modal({
   children,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const initialFocusRefLatest = useRef(initialFocusRef);
 
+  onCloseRef.current = onClose;
+  initialFocusRefLatest.current = initialFocusRef;
+
+  // Depend ONLY on [open] so parent re-renders with new inline onClose callbacks never steal focus
   useEffect(() => {
     if (!open) return;
 
     const focusTimer = requestAnimationFrame(() => {
-      if (initialFocusRef?.current) {
-        initialFocusRef.current.focus();
+      const target = initialFocusRefLatest.current?.current;
+      if (target) {
+        target.focus();
         return;
       }
       const firstFocusable = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
@@ -44,7 +51,7 @@ export function Modal({
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -74,7 +81,7 @@ export function Modal({
       cancelAnimationFrame(focusTimer);
       document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [open, onClose, initialFocusRef]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -86,7 +93,7 @@ export function Modal({
       aria-labelledby={ariaLabelledBy}
       aria-describedby={ariaDescribedBy}
       onClick={e => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current();
       }}
       className="fixed inset-0 z-50 bg-slate-900/55 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4"
     >

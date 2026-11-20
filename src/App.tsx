@@ -1,8 +1,8 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { AuthModal } from './components/AuthModal';
 import { BunpouListPanel } from './components/BunpouListPanel';
-import { FlashcardPanel, type DeckStatusFilter } from './components/FlashcardPanel';
+import { FlashcardPanel } from './components/FlashcardPanel';
 import { IrodoriBookMenu } from './components/IrodoriBookMenu';
 import { Modal } from './components/Modal';
 import { ProfileModal } from './components/ProfileModal';
@@ -14,16 +14,11 @@ import { getFirestoreUpgradeUrl } from './firebase';
 import { useAuthActions } from './hooks/useAuthActions';
 import { useBackupRestore } from './hooks/useBackupRestore';
 import { useCloudProgressSync } from './hooks/useCloudProgressSync';
+import { useFlashcardDeck } from './hooks/useFlashcardDeck';
 import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
-import type {
-  AppTab,
-  BookId,
-  BunpouPattern,
-  ChapterFilter,
-} from './types/bunpou';
+import type { AppTab, BookId, BunpouPattern, ChapterFilter } from './types/bunpou';
 import { createBookRecord } from './utils/bunpouSync';
-import { shuffled } from './utils/quizGenerator';
 import { stopSpeaking } from './utils/speech';
 import { loadGlobalFuriganaPref, saveGlobalFuriganaPref } from './utils/storage';
 
@@ -53,12 +48,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('card');
   const [activeChapter, setActiveChapter] = useState<ChapterFilter>('all');
   const [showFurigana, setShowFurigana] = useState<boolean>(() => loadGlobalFuriganaPref());
-
-  // Flashcard state
-  const [deckFilter, setDeckFilter] = useState<DeckStatusFilter>('all');
-  const [cardIndex, setCardIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [shuffleOrder, setShuffleOrder] = useState<string[] | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const { isDark, toggleTheme } = useTheme();
@@ -103,83 +92,15 @@ export default function App() {
     showToast,
   });
 
-  const activeBook = useMemo(() => {
-    return dataset.books.find(b => b.id === activeBookId) ?? dataset.books[0];
-  }, [dataset, activeBookId]);
+  const activeBook = useMemo(
+    () => dataset.books.find(b => b.id === activeBookId) ?? dataset.books[0],
+    [dataset, activeBookId]
+  );
 
   const activeBucket = cloudSync.booksProgress[activeBookId];
   const activeMastered = activeBucket.mastered;
   const activeHardSet = activeBucket.hard;
   const activeValidIds = validIdsByBook[activeBookId];
-
-  const backupRestore = useBackupRestore({
-    bookId: activeBookId,
-    activeMastered,
-    activeHardSet,
-    activeValidIds,
-    applyProgressChange: (m, h) => cloudSync.applyProgressChange(m, h, activeBookId),
-    onRestoreCommitted: () => {
-      setCardIndex(0);
-      setIsFlipped(false);
-    },
-    showToast,
-    dismissToast,
-  });
-
-  // Patterns in active book & selected chapter
-  const scopedPatterns = useMemo<BunpouPattern[]>(() => {
-    if (activeChapter === 'all') {
-      return activeBook.chapters.flatMap(ch => ch.patterns);
-    }
-    const ch = activeBook.chapters.find(c => c.chapterNumber === activeChapter);
-    return ch ? ch.patterns : [];
-  }, [activeBook, activeChapter]);
-
-  // Flashcard deck (filtered by deckFilter & optional shuffleOrder)
-  const flashcardDeck = useMemo<BunpouPattern[]>(() => {
-    const base = scopedPatterns.filter(p => {
-      if (deckFilter === 'unmastered') return !activeMastered.has(p.id);
-      if (deckFilter === 'hard') return activeHardSet.has(p.id);
-      return true;
-    });
-    if (!shuffleOrder) return base;
-    const rank = new Map(shuffleOrder.map((id, i) => [id, i]));
-    return [...base].sort((a, b) => (rank.get(a.id) ?? 9999) - (rank.get(b.id) ?? 9999));
-  }, [scopedPatterns, deckFilter, activeMastered, activeHardSet, shuffleOrder]);
-
-  useEffect(() => {
-    if (cardIndex >= flashcardDeck.length && flashcardDeck.length > 0) {
-      setCardIndex(flashcardDeck.length - 1);
-    }
-  }, [cardIndex, flashcardDeck.length]);
-
-  // Stop any playing TTS utterance when changing book, tab, chapter, or card
-  useEffect(() => {
-    stopSpeaking();
-  }, [activeBookId, activeTab, activeChapter, cardIndex]);
-
-  const handleSelectBook = useCallback((nextBookId: BookId) => {
-    stopSpeaking();
-    setActiveBookId(nextBookId);
-    setActiveChapter('all');
-    setDeckFilter('all');
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShuffleOrder(null);
-  }, []);
-
-  const handleSelectChapter = useCallback((nextChapter: ChapterFilter) => {
-    stopSpeaking();
-    setActiveChapter(nextChapter);
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShuffleOrder(null);
-  }, []);
-
-  const handleSelectTab = useCallback((nextTab: AppTab) => {
-    stopSpeaking();
-    setActiveTab(nextTab);
-  }, []);
 
   const handleToggleMastered = useCallback(
     (patternId: string) => {
@@ -211,112 +132,80 @@ export default function App() {
     [activeMastered, activeHardSet, activeBookId, cloudSync]
   );
 
-  const handlePrevCard = useCallback(() => {
-    if (flashcardDeck.length < 2) return;
-    stopSpeaking();
-    setIsFlipped(false);
-    setCardIndex(prev => (prev - 1 + flashcardDeck.length) % flashcardDeck.length);
-  }, [flashcardDeck.length]);
+  const resetDeckToFirstRef = useRef<() => void>(() => undefined);
 
-  const handleNextCard = useCallback(() => {
-    if (flashcardDeck.length < 2) return;
-    stopSpeaking();
-    setIsFlipped(false);
-    setCardIndex(prev => (prev + 1) % flashcardDeck.length);
-  }, [flashcardDeck.length]);
+  const backupRestore = useBackupRestore({
+    bookId: activeBookId,
+    activeMastered,
+    activeHardSet,
+    activeValidIds,
+    applyProgressChange: (m, h) => cloudSync.applyProgressChange(m, h, activeBookId),
+    onRestoreCommitted: () => resetDeckToFirstRef.current(),
+    showToast,
+    dismissToast,
+  });
 
-  const handleShuffleDeck = useCallback(() => {
-    if (flashcardDeck.length < 2) return;
+  const deck = useFlashcardDeck({
+    activeBookId,
+    activeBook,
+    activeTab,
+    activeChapter,
+    activeMastered,
+    activeHardSet,
+    shortcutsDisabled:
+      authActions.authModalOpen ||
+      cloudSync.profileModalOpen ||
+      Boolean(backupRestore.pendingRestore) ||
+      resetConfirmOpen,
+    onToggleMastered: handleToggleMastered,
+    onToggleHard: handleToggleHard,
+    showToast,
+  });
+
+  resetDeckToFirstRef.current = deck.resetDeckToFirst;
+
+  const handleSelectBook = useCallback(
+    (nextBookId: BookId) => {
+      stopSpeaking();
+      setActiveBookId(nextBookId);
+      setActiveChapter('all');
+      deck.resetDeckForBook();
+    },
+    [deck.resetDeckForBook]
+  );
+
+  const handleSelectChapter = useCallback(
+    (nextChapter: ChapterFilter) => {
+      stopSpeaking();
+      setActiveChapter(nextChapter);
+      deck.resetDeckForChapter();
+    },
+    [deck.resetDeckForChapter]
+  );
+
+  const handleSelectTab = useCallback((nextTab: AppTab) => {
     stopSpeaking();
-    const ids = shuffled(flashcardDeck.map(p => p.id));
-    setShuffleOrder(ids);
-    setCardIndex(0);
-    setIsFlipped(false);
-    showToast('info', 'Kartu Diacak', `Urutan ${ids.length} kartu telah diperbarui.`);
-  }, [flashcardDeck, showToast]);
+    setActiveTab(nextTab);
+  }, []);
 
   const handleConfirmResetBook = useCallback(() => {
     cloudSync.applyProgressChange(new Set(), new Set(), activeBookId);
-    setDeckFilter('all');
-    setCardIndex(0);
-    setIsFlipped(false);
+    deck.resetDeckAfterBookReset();
     setResetConfirmOpen(false);
     showToast(
       'info',
       'Progres Buku Direset',
       `Status hafal & sulit untuk ${activeBook.shortTitle} telah dikosongkan.`
     );
-  }, [activeBook.shortTitle, activeBookId, cloudSync, showToast]);
+  }, [activeBook.shortTitle, activeBookId, cloudSync, deck.resetDeckAfterBookReset, showToast]);
 
   const handleSignOut = useCallback(() => {
     void authActions.executeSignOut(() => {
       cloudSync.resetCloudAndLocalProgress();
       backupRestore.clearPendingRestore();
-      setCardIndex(0);
-      setIsFlipped(false);
+      deck.resetDeckToFirst();
     });
-  }, [authActions, cloudSync, backupRestore]);
-
-  // Keyboard shortcuts for Flashcard mode
-  useEffect(() => {
-    if (
-      activeTab !== 'card' ||
-      authActions.authModalOpen ||
-      cloudSync.profileModalOpen ||
-      Boolean(backupRestore.pendingRestore) ||
-      resetConfirmOpen
-    ) {
-      return;
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      const currentCard = flashcardDeck[Math.min(cardIndex, Math.max(0, flashcardDeck.length - 1))];
-      if (!currentCard) return;
-
-      if (e.code === 'Space') {
-        e.preventDefault();
-        setIsFlipped(f => !f);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleNextCard();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePrevCard();
-      } else if (e.key === 'h' || e.key === 'H') {
-        e.preventDefault();
-        handleToggleMastered(currentCard.id);
-      } else if (e.key === 'u' || e.key === 'U') {
-        e.preventDefault();
-        handleToggleHard(currentCard.id);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    activeTab,
-    authActions.authModalOpen,
-    cloudSync.profileModalOpen,
-    backupRestore.pendingRestore,
-    resetConfirmOpen,
-    flashcardDeck,
-    cardIndex,
-    handleNextCard,
-    handlePrevCard,
-    handleToggleMastered,
-    handleToggleHard,
-  ]);
+  }, [authActions, cloudSync, backupRestore, deck.resetDeckToFirst]);
 
   const chapterLabel = useMemo(() => {
     if (activeChapter === 'all') {
@@ -349,29 +238,35 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
       <AppHeader
         bookShortTitle={activeBook.shortTitle}
-        showFurigana={showFurigana}
-        onToggleFurigana={toggleFurigana}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
         masteredCount={activeMastered.size}
         totalCount={activeBook.totalPatterns}
-        restoreBtnRef={backupRestore.restoreBtnRef}
-        fileInputRef={backupRestore.fileInputRef}
-        user={authActions.user}
-        displayName={resolvedDisplayName}
-        avatarUrl={resolvedAvatarUrl}
-        authReady={authActions.authReady}
-        authBusy={authActions.authBusy}
-        syncing={cloudSync.syncing}
-        onOpenAuthModal={authActions.handleOpenAuthModal}
-        onOpenProfileModal={() => cloudSync.setProfileModalOpen(true)}
-        onManualSync={() => void cloudSync.handleManualSync()}
-        onResendVerification={() => void authActions.handleResendVerification()}
-        onRefreshVerification={() => void authActions.handleRefreshVerification()}
-        onSignOut={handleSignOut}
-        onExport={backupRestore.handleExport}
-        onTriggerImport={backupRestore.handleTriggerImport}
-        onFileSelected={backupRestore.handleFileSelected}
+        preferences={{
+          showFurigana,
+          onToggleFurigana: toggleFurigana,
+          isDark,
+          onToggleTheme: toggleTheme,
+        }}
+        account={{
+          user: authActions.user,
+          displayName: resolvedDisplayName,
+          avatarUrl: resolvedAvatarUrl,
+          authReady: authActions.authReady,
+          authBusy: authActions.authBusy,
+          syncing: cloudSync.syncing,
+          onOpenAuthModal: authActions.handleOpenAuthModal,
+          onOpenProfileModal: () => cloudSync.setProfileModalOpen(true),
+          onManualSync: () => void cloudSync.handleManualSync(),
+          onResendVerification: () => void authActions.handleResendVerification(),
+          onRefreshVerification: () => void authActions.handleRefreshVerification(),
+          onSignOut: handleSignOut,
+        }}
+        backup={{
+          restoreBtnRef: backupRestore.restoreBtnRef,
+          fileInputRef: backupRestore.fileInputRef,
+          onExport: backupRestore.handleExport,
+          onTriggerImport: backupRestore.handleTriggerImport,
+          onFileSelected: backupRestore.handleFileSelected,
+        }}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5">
@@ -427,32 +322,27 @@ export default function App() {
           <div className="min-w-0">
             {activeTab === 'card' ? (
               <FlashcardPanel
-                deck={flashcardDeck}
-                currentIndex={cardIndex}
-                isFlipped={isFlipped}
+                deck={deck.flashcardDeck}
+                currentIndex={deck.cardIndex}
+                isFlipped={deck.isFlipped}
                 showFurigana={showFurigana}
-                deckFilter={deckFilter}
+                deckFilter={deck.deckFilter}
                 masteredSet={activeMastered}
                 hardSet={activeHardSet}
                 bookShortTitle={activeBook.shortTitle}
                 chapterLabel={chapterLabel}
-                onChangeDeckFilter={next => {
-                  stopSpeaking();
-                  setDeckFilter(next);
-                  setCardIndex(0);
-                  setIsFlipped(false);
-                }}
-                onFlip={() => setIsFlipped(f => !f)}
-                onPrev={handlePrevCard}
-                onNext={handleNextCard}
-                onShuffle={handleShuffleDeck}
+                onChangeDeckFilter={deck.handleChangeDeckFilter}
+                onFlip={deck.handleFlipCard}
+                onPrev={deck.handlePrevCard}
+                onNext={deck.handleNextCard}
+                onShuffle={deck.handleShuffleDeck}
                 onMarkMastered={handleToggleMastered}
                 onMarkHard={handleToggleHard}
                 onResetBookProgress={() => setResetConfirmOpen(true)}
               />
             ) : activeTab === 'list' ? (
               <BunpouListPanel
-                patterns={scopedPatterns}
+                patterns={deck.scopedPatterns}
                 showFurigana={showFurigana}
                 masteredSet={activeMastered}
                 hardSet={activeHardSet}

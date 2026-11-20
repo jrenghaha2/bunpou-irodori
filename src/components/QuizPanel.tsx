@@ -98,12 +98,15 @@ export function QuizPanel({
     );
   };
 
-  const startQuiz = () => {
+  const startQuiz = (overrideCount?: QuizCountOption) => {
+    const activeCount = overrideCount ?? questionCount;
+    const resolvedCount =
+      activeCount === 'all' ? 'all' : Math.max(1, Math.min(activeCount, bankSize));
     const generated = generateQuizQuestions(allPatterns, {
       bookId: book.id,
       chapters: selectedChapters,
       focus,
-      count: questionCount,
+      count: resolvedCount,
       seed: Date.now(),
     });
     if (generated.length === 0) return;
@@ -204,7 +207,7 @@ export function QuizPanel({
             focus={focus}
             bookShortTitle={book.shortTitle}
             showFurigana={showFurigana}
-            onRetry={startQuiz}
+            onRetry={() => startQuiz()}
             onBackToSetup={() => setPhase('setup')}
           />
 
