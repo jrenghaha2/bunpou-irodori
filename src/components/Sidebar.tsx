@@ -1,5 +1,14 @@
-import { BookMarked, CheckCircle2, ClipboardCheck, Layers, List } from 'lucide-react';
-import type { AppTab, BookData, ChapterFilter } from '../types/bunpou';
+import {
+  BookMarked,
+  CheckCircle2,
+  ClipboardCheck,
+  Eye,
+  Layers,
+  List,
+  ShieldCheck,
+} from 'lucide-react';
+import type { AppTab, BookData, ChapterFilter, UserRole } from '../types/bunpou';
+import { canAccessAdminPanel } from '../utils/adminRoles';
 
 interface SidebarProps {
   activeTab: AppTab;
@@ -7,6 +16,7 @@ interface SidebarProps {
   book: BookData;
   masteredSet: Set<string>;
   hardSet: Set<string>;
+  userRole: UserRole;
   onSelectTab: (tab: AppTab) => void;
   onSelectChapter: (chapter: ChapterFilter) => void;
 }
@@ -24,9 +34,22 @@ export function Sidebar({
   book,
   masteredSet,
   hardSet,
+  userRole,
   onSelectTab,
   onSelectChapter,
 }: SidebarProps) {
+  const showAdminTab = canAccessAdminPanel(userRole);
+  const navItems = showAdminTab
+    ? [
+        ...MODE_ITEMS,
+        {
+          id: 'admin' as AppTab,
+          label: userRole === 'superadmin' ? 'Panel Superadmin' : 'Panel Pantau Admin',
+          shortLabel: userRole === 'superadmin' ? 'Super' : 'Pantau',
+          icon: userRole === 'superadmin' ? ShieldCheck : Eye,
+        },
+      ]
+    : MODE_ITEMS;
   const totalBookPatterns = book.totalPatterns;
   const totalBookMastered = book.chapters.reduce(
     (sum, ch) => sum + ch.patterns.filter(p => masteredSet.has(p.id)).length,
@@ -49,9 +72,9 @@ export function Sidebar({
         <div
           role="tablist"
           aria-label="Mode belajar"
-          className="grid grid-cols-4 lg:grid-cols-1 gap-1.5"
+          className={`grid ${showAdminTab ? 'grid-cols-5' : 'grid-cols-4'} lg:grid-cols-1 gap-1.5`}
         >
-          {MODE_ITEMS.map(item => {
+          {navItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (

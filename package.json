@@ -10,7 +10,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "lint:rules": "eslint firestore.rules",
-    "test": "tsx --test src/utils/bunpouLogic.test.ts src/utils/storage.test.ts src/utils/quizStats.test.ts firestore.rules.test.ts"
+    "test": "tsx --test src/utils/bunpouLogic.test.ts src/utils/storage.test.ts src/utils/quizStats.test.ts src/utils/adminRoles.test.ts firestore.rules.test.ts"
   },
   "dependencies": {
     "firebase": "^13.4.0",

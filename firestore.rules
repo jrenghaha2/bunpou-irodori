@@ -32,6 +32,33 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Bootstrapped first Superadmin (requires verified Auth email token)
+    function isBootstrapSuperAdmin() {
+      return isVerifiedUser()
+        && request.auth.token.email is string
+        && request.auth.token.email.lower() == 'jrenghaha2@gmail.com';
+    }
+
+    function hasCallerProfile() {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function callerRole() {
+      let profile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return ('role' in profile && profile.role is string) ? profile.role : 'user';
+    }
+
+    function isSuperAdmin() {
+      return isBootstrapSuperAdmin()
+        || (hasCallerProfile() && callerRole() == 'superadmin');
+    }
+
+    function isAdminOrSuperAdmin() {
+      return isBootstrapSuperAdmin()
+        || (hasCallerProfile() && callerRole() in ['admin', 'superadmin']);
+    }
+
     function isValidBookId(bookId) {
       return bookId is string && bookId in ['introductory', 'elementary1', 'elementary2'];
     }
@@ -48,6 +75,23 @@ service cloud.firestore {
           && (data.avatarUrl.size() == 0
             || data.avatarUrl.matches('^https://[^\\s]+$')
             || data.avatarUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')));
+    }
+
+    function isValidOptionalEmail(data) {
+      return !('email' in data)
+        || (data.email is string && data.email.size() <= 120);
+    }
+
+    function isCallerBoundEmail(data) {
+      return !('email' in data)
+        || data.email == ''
+        || (request.auth.token.email is string
+          && data.email == request.auth.token.email.lower());
+    }
+
+    function isValidOptionalRole(data) {
+      return !('role' in data)
+        || (data.role is string && data.role in ['user', 'admin', 'superadmin']);
     }
 
     // Full-array validation without loops using dual-separator join (',' and '|'):
@@ -159,15 +203,17 @@ service cloud.firestore {
         && (arr.size() <= 14 || isValidQuizSessionToken(arr[14], bookId));
     }
 
-    // Standalone Validation Blueprint for UserProfile (safe for both create and update)
-    function isValidUserProfile(data) {
+    // Standalone Validation Blueprint for UserProfile (safe for create, owner update, and superadmin role update)
+    function isValidUserProfile(data, userId) {
       return data.keys().hasAll(['uid', 'createdAt', 'updatedAt'])
-        && data.keys().hasOnly(['uid', 'displayName', 'avatarUrl', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'avatarUrl', 'email', 'role', 'createdAt', 'updatedAt'])
         && data.uid is string
         && isValidId(data.uid)
-        && data.uid == request.auth.uid
+        && data.uid == userId
         && isValidDisplayName(data)
         && isValidAvatarUrl(data)
+        && isValidOptionalEmail(data)
+        && isValidOptionalRole(data)
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -202,32 +248,209 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    // Standalone Validation Blueprint for LiveActivity (safe for both create and update)
+    function isValidLiveActivity(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'email',
+          'avatarUrl',
+          'activeBookId',
+          'activeTab',
+          'activeChapterLabel',
+          'activityType',
+          'activitySummary',
+          'quizLiveCurrent',
+          'quizLiveTotal',
+          'quizLiveCorrect',
+          'masteredTotal',
+          'hardTotal',
+          'introMastered',
+          'elem1Mastered',
+          'elem2Mastered',
+          'latestQuizScore',
+          'latestQuizSummary',
+          'quizSessionCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'avatarUrl',
+          'activeBookId',
+          'activeTab',
+          'activeChapterLabel',
+          'activityType',
+          'activitySummary',
+          'quizLiveCurrent',
+          'quizLiveTotal',
+          'quizLiveCorrect',
+          'masteredTotal',
+          'hardTotal',
+          'introMastered',
+          'elem1Mastered',
+          'elem2Mastered',
+          'latestQuizScore',
+          'latestQuizSummary',
+          'quizSessionCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() <= 60
+        && data.email is string
+        && data.email.size() <= 120
+        && isCallerBoundEmail(data)
+        && isValidAvatarUrl(data)
+        && isValidBookId(data.activeBookId)
+        && data.activeTab is string
+        && data.activeTab in ['card', 'list', 'quiz', 'guide', 'admin']
+        && data.activeChapterLabel is string
+        && data.activeChapterLabel.size() >= 1
+        && data.activeChapterLabel.size() <= 80
+        && data.activityType is string
+        && data.activityType in ['browsing', 'flashcard', 'list', 'quiz_running', 'quiz_finished', 'guide', 'admin']
+        && data.activitySummary is string
+        && data.activitySummary.size() >= 1
+        && data.activitySummary.size() <= 180
+        && data.quizLiveCurrent is int && data.quizLiveCurrent >= 0 && data.quizLiveCurrent <= 300
+        && data.quizLiveTotal is int && data.quizLiveTotal >= 0 && data.quizLiveTotal <= 300
+        && data.quizLiveCorrect is int && data.quizLiveCorrect >= 0 && data.quizLiveCorrect <= 300
+        && data.quizLiveCorrect <= data.quizLiveTotal
+        && data.masteredTotal is int && data.masteredTotal >= 0 && data.masteredTotal <= 300
+        && data.hardTotal is int && data.hardTotal >= 0 && data.hardTotal <= 300
+        && data.introMastered is int && data.introMastered >= 0 && data.introMastered <= 150
+        && data.elem1Mastered is int && data.elem1Mastered >= 0 && data.elem1Mastered <= 150
+        && data.elem2Mastered is int && data.elem2Mastered >= 0 && data.elem2Mastered <= 150
+        && data.latestQuizScore is int && data.latestQuizScore >= -1 && data.latestQuizScore <= 100
+        && data.latestQuizSummary is string && data.latestQuizSummary.size() <= 180
+        && data.quizSessionCount is int && data.quizSessionCount >= 0 && data.quizSessionCount <= 9999
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Standalone Validation Blueprint for immutable ActivityEvent
+    function isValidActivityEvent(data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'email',
+          'eventType',
+          'bookId',
+          'scopeLabel',
+          'focus',
+          'correct',
+          'total',
+          'score',
+          'summary',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'eventType',
+          'bookId',
+          'scopeLabel',
+          'focus',
+          'correct',
+          'total',
+          'score',
+          'summary',
+          'createdAt'
+        ])
+        && data.uid is string
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 60
+        && data.email is string
+        && data.email.size() <= 120
+        && isCallerBoundEmail(data)
+        && data.eventType is string
+        && data.eventType in ['quiz_started', 'quiz_completed', 'progress_milestone']
+        && isValidBookId(data.bookId)
+        && data.scopeLabel is string
+        && data.scopeLabel.size() >= 1
+        && data.scopeLabel.size() <= 80
+        && data.focus is string
+        && data.focus in ['mixed', 'cloze', 'formula', 'function', 'none']
+        && data.correct is int && data.correct >= 0 && data.correct <= 300
+        && data.total is int && data.total >= 0 && data.total <= 300
+        && data.correct <= data.total
+        && data.score is int && data.score >= -1 && data.score <= 100
+        && data.summary is string
+        && data.summary.size() >= 1
+        && data.summary.size() <= 200
+        && data.createdAt is timestamp;
+    }
+
     // --- /users/{userId} ---
     match /users/{userId} {
       allow get: if isSignedIn()
         && isValidId(userId)
-        && isOwner(userId);
+        && (isOwner(userId) || isAdminOrSuperAdmin());
 
-      allow list: if false;
+      allow list: if isSignedIn()
+        && isAdminOrSuperAdmin()
+        && request.query.limit <= 100;
 
       allow create: if isSignedIn()
         && isVerifiedUser()
         && isValidId(userId)
         && isOwner(userId)
-        && isValidUserProfile(incoming())
-        && incoming().uid == userId
+        && isValidUserProfile(incoming(), userId)
+        && isCallerBoundEmail(incoming())
         && incoming().createdAt == request.time
-        && incoming().updatedAt == request.time;
+        && incoming().updatedAt == request.time
+        && (
+          (isBootstrapSuperAdmin() && (!('role' in incoming()) || incoming().role == 'superadmin'))
+          || (!('role' in incoming()) || incoming().role == 'user')
+        );
 
       allow update: if isSignedIn()
         && isVerifiedUser()
         && isValidId(userId)
-        && isOwner(userId)
-        && isValidUserProfile(incoming())
+        && isValidUserProfile(incoming(), userId)
         && incoming().uid == existing().uid
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatarUrl', 'updatedAt']);
+        && (
+          // Action 1: Owner updates own profile fields (cannot change role)
+          (
+            isOwner(userId)
+            && isCallerBoundEmail(incoming())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatarUrl', 'email', 'updatedAt'])
+          )
+          ||
+          // Action 2: Bootstrap Superadmin self-heals role='superadmin' on legacy profile document
+          (
+            isOwner(userId)
+            && isBootstrapSuperAdmin()
+            && isCallerBoundEmail(incoming())
+            && ('role' in incoming())
+            && incoming().role == 'superadmin'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'avatarUrl', 'email', 'role', 'updatedAt'])
+          )
+          ||
+          // Action 3: Superadmin grants or revokes 'admin' / 'superadmin' role on another user
+          // (cannot modify self or demote the primary bootstrap Superadmin)
+          (
+            isSuperAdmin()
+            && userId != request.auth.uid
+            && (!('email' in existing()) || existing().email != 'jrenghaha2@gmail.com')
+            && ('role' in incoming())
+            && incoming().role in ['user', 'admin', 'superadmin']
+            && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'updatedAt'])
+          )
+        );
 
       // Deny client-side profile deletion to prevent orphaned subcollections
       allow delete: if false;
@@ -236,8 +459,8 @@ service cloud.firestore {
       match /bunpouProgress/{bookId} {
         allow get: if isSignedIn()
           && isValidId(userId)
-          && isOwner(userId)
           && isValidBookId(bookId)
+          && (isOwner(userId) || isAdminOrSuperAdmin())
           && exists(/databases/$(database)/documents/users/$(userId));
 
         allow list: if false;
@@ -278,8 +501,8 @@ service cloud.firestore {
       match /quizHistory/{bookId} {
         allow get: if isSignedIn()
           && isValidId(userId)
-          && isOwner(userId)
           && isValidBookId(bookId)
+          && (isOwner(userId) || isAdminOrSuperAdmin())
           && exists(/databases/$(database)/documents/users/$(userId));
 
         allow list: if false;
@@ -315,6 +538,80 @@ service cloud.firestore {
           && isValidBookId(bookId)
           && exists(/databases/$(database)/documents/users/$(userId));
       }
+    }
+
+    // --- /liveActivity/{userId} ---
+    match /liveActivity/{userId} {
+      allow get: if isSignedIn()
+        && isValidId(userId)
+        && (isOwner(userId) || isAdminOrSuperAdmin());
+
+      allow list: if isSignedIn()
+        && isAdminOrSuperAdmin()
+        && request.query.limit <= 100;
+
+      allow create: if isSignedIn()
+        && isVerifiedUser()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidLiveActivity(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/users/$(userId));
+
+      allow update: if isSignedIn()
+        && isVerifiedUser()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidLiveActivity(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'email',
+          'avatarUrl',
+          'activeBookId',
+          'activeTab',
+          'activeChapterLabel',
+          'activityType',
+          'activitySummary',
+          'quizLiveCurrent',
+          'quizLiveTotal',
+          'quizLiveCorrect',
+          'masteredTotal',
+          'hardTotal',
+          'introMastered',
+          'elem1Mastered',
+          'elem2Mastered',
+          'latestQuizScore',
+          'latestQuizSummary',
+          'quizSessionCount',
+          'updatedAt'
+        ])
+        && exists(/databases/$(database)/documents/users/$(userId));
+
+      allow delete: if false;
+    }
+
+    // --- /activityEvents/{eventId} ---
+    match /activityEvents/{eventId} {
+      allow get: if isSignedIn()
+        && isValidId(eventId)
+        && isAdminOrSuperAdmin();
+
+      allow list: if isSignedIn()
+        && isAdminOrSuperAdmin()
+        && request.query.limit <= 100;
+
+      allow create: if isSignedIn()
+        && isVerifiedUser()
+        && isValidId(eventId)
+        && isValidActivityEvent(incoming())
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+
+      allow update, delete: if false;
     }
   }
 }

@@ -6,15 +6,19 @@ import {
   ChevronDown,
   Cloud,
   Download,
+  Eye,
   FolderOpen,
   Languages,
   LogIn,
   LogOut,
   Moon,
   RefreshCw,
+  ShieldCheck,
   Sun,
   Users,
 } from 'lucide-react';
+import type { UserRole } from '../types/bunpou';
+import { canAccessAdminPanel, getRoleLabelId } from '../utils/adminRoles';
 import { BrandLogo } from './BrandLogo';
 
 export interface AppHeaderPreferences {
@@ -30,11 +34,13 @@ export interface AppHeaderAccount {
   user: User | null;
   displayName: string;
   avatarUrl: string;
+  userRole: UserRole;
   authReady: boolean;
   authBusy: boolean;
   syncing: boolean;
   onOpenAuthModal: (isSwitch: boolean) => void;
   onOpenProfileModal: () => void;
+  onOpenAdminPanel: () => void;
   onManualSync: () => void;
   onResendVerification: () => void;
   onRefreshVerification: () => void;
@@ -92,16 +98,19 @@ export function AppHeader({
     user,
     displayName,
     avatarUrl,
+    userRole,
     authReady,
     authBusy,
     syncing,
     onOpenAuthModal,
     onOpenProfileModal,
+    onOpenAdminPanel,
     onManualSync,
     onResendVerification,
     onRefreshVerification,
     onSignOut,
   } = account;
+  const hasAdminAccess = canAccessAdminPanel(userRole);
   const { restoreBtnRef, fileInputRef, onExport, onTriggerImport, onFileSelected } = backup;
 
   useEffect(() => {
@@ -350,9 +359,22 @@ export function AppHeader({
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-50 truncate">
-                        {resolvedName}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-50 truncate">
+                          {resolvedName}
+                        </p>
+                        {hasAdminAccess ? (
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${
+                              userRole === 'superadmin'
+                                ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                : 'bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800'
+                            }`}
+                          >
+                            {getRoleLabelId(userRole)}
+                          </span>
+                        ) : null}
+                      </div>
                       {user.email ? (
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {user.email}
@@ -403,6 +425,30 @@ export function AppHeader({
                   ) : null}
 
                   <div className="py-1">
+                    {hasAdminAccess ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="menuOpenAdminPanel"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onOpenAdminPanel();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-950/60 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        {userRole === 'superadmin' ? (
+                          <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        ) : (
+                          <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        )}
+                        <span>
+                          {userRole === 'superadmin'
+                            ? 'Panel Superadmin (Pantau Live)'
+                            : 'Panel Pantau Admin'}
+                        </span>
+                      </button>
+                    ) : null}
+
                     <button
                       type="button"
                       role="menuitem"

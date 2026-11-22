@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { AuthModal } from './components/AuthModal';
 import { BunpouListPanel } from './components/BunpouListPanel';
@@ -15,9 +15,11 @@ import { useAuthActions } from './hooks/useAuthActions';
 import { useBackupRestore } from './hooks/useBackupRestore';
 import { useCloudProgressSync } from './hooks/useCloudProgressSync';
 import { useFlashcardDeck } from './hooks/useFlashcardDeck';
+import { useLiveActivityTracker } from './hooks/useLiveActivityTracker';
 import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
 import type { AppTab, BookId, BunpouPattern, ChapterFilter } from './types/bunpou';
+import { canAccessAdminPanel, type LiveQuizSnapshot } from './utils/adminRoles';
 import { createBookRecord } from './utils/bunpouSync';
 import { stopSpeaking } from './utils/speech';
 import {
@@ -32,6 +34,9 @@ const QuizPanel = lazy(() =>
 );
 const AbbreviationsView = lazy(() =>
   import('./components/AbbreviationsView').then(m => ({ default: m.AbbreviationsView }))
+);
+const AdminMonitorPanel = lazy(() =>
+  import('./components/AdminMonitorPanel').then(m => ({ default: m.AdminMonitorPanel }))
 );
 
 function LazyTabFallback() {
@@ -55,6 +60,7 @@ export default function App() {
   const [showFurigana, setShowFurigana] = useState<boolean>(() => loadGlobalFuriganaPref());
   const [showTranslation, setShowTranslation] = useState<boolean>(() => loadGlobalTranslationPref());
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [liveQuiz, setLiveQuiz] = useState<LiveQuizSnapshot | null>(null);
 
   const { isDark, toggleTheme } = useTheme();
   const { toast, showToast, dismissToast } = useToast();
@@ -247,6 +253,31 @@ export default function App() {
     authActions.user?.email?.split('@')[0] ||
     '';
   const resolvedAvatarUrl = cloudSync.customAvatarUrl || authActions.user?.photoURL || '';
+  const hasAdminAccess = canAccessAdminPanel(cloudSync.userRole);
+
+  // Immediately exit admin tab if user signs out or their admin role is revoked
+  useEffect(() => {
+    if (activeTab === 'admin' && !hasAdminAccess) {
+      setActiveTab('card');
+    }
+  }, [activeTab, hasAdminAccess]);
+
+  const currentFlashcardPattern = deck.flashcardDeck[deck.cardIndex] ?? null;
+
+  const liveTracker = useLiveActivityTracker({
+    user: authActions.user,
+    offlineFallback: cloudSync.offlineFallback,
+    displayName: resolvedDisplayName,
+    avatarUrl: resolvedAvatarUrl,
+    activeBookId,
+    activeTab,
+    chapterLabel,
+    currentPattern: currentFlashcardPattern,
+    booksProgress: cloudSync.booksProgress,
+    quizHistories: cloudSync.quizHistories,
+    liveQuiz,
+    ensureUserProfileDoc: cloudSync.ensureUserProfileDoc,
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
@@ -266,11 +297,13 @@ export default function App() {
           user: authActions.user,
           displayName: resolvedDisplayName,
           avatarUrl: resolvedAvatarUrl,
+          userRole: cloudSync.userRole,
           authReady: authActions.authReady,
           authBusy: authActions.authBusy,
           syncing: cloudSync.syncing,
           onOpenAuthModal: authActions.handleOpenAuthModal,
           onOpenProfileModal: () => cloudSync.setProfileModalOpen(true),
+          onOpenAdminPanel: () => handleSelectTab('admin'),
           onManualSync: () => void cloudSync.handleManualSync(),
           onResendVerification: () => void authActions.handleResendVerification(),
           onRefreshVerification: () => void authActions.handleRefreshVerification(),
@@ -331,6 +364,7 @@ export default function App() {
             book={activeBook}
             masteredSet={activeMastered}
             hardSet={activeHardSet}
+            userRole={cloudSync.userRole}
             onSelectTab={handleSelectTab}
             onSelectChapter={handleSelectChapter}
           />
@@ -383,6 +417,20 @@ export default function App() {
                   }
                   onRecordQuizSession={cloudSync.handleRecordQuizSession}
                   onClearQuizHistory={() => cloudSync.handleClearQuizHistory(activeBookId)}
+                  onLiveQuizChange={setLiveQuiz}
+                  onQuizStarted={liveTracker.recordQuizStartedEvent}
+                  onQuizCompleted={liveTracker.recordQuizCompletedEvent}
+                />
+              </Suspense>
+            ) : activeTab === 'admin' && hasAdminAccess && authActions.user ? (
+              <Suspense fallback={<LazyTabFallback />}>
+                <AdminMonitorPanel
+                  currentUid={authActions.user.uid}
+                  currentRole={cloudSync.userRole}
+                  books={dataset.books}
+                  validIdsByBook={validIdsByBook}
+                  patternById={patternById}
+                  showToast={showToast}
                 />
               </Suspense>
             ) : (

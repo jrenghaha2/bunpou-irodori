@@ -1,6 +1,8 @@
 export type BookId = 'introductory' | 'elementary1' | 'elementary2';
 
-export type AppTab = 'card' | 'list' | 'quiz' | 'guide';
+export type AppTab = 'card' | 'list' | 'quiz' | 'guide' | 'admin';
+
+export type UserRole = 'user' | 'admin' | 'superadmin';
 
 export type DeckStatusFilter = 'all' | 'unmastered' | 'hard';
 

@@ -491,6 +491,8 @@ export function useCloudProgressSync({
     enableOfflineFallback,
     customDisplayName: profile.customDisplayName,
     customAvatarUrl: profile.customAvatarUrl,
+    userRole: profile.userRole,
+    ensureUserProfileDoc: profile.ensureUserProfileDoc,
     profileModalOpen: profile.profileModalOpen,
     setProfileModalOpen: profile.setProfileModalOpen,
     profileSaving: profile.profileSaving,

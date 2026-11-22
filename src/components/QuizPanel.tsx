@@ -20,6 +20,7 @@ import { QuizResultView } from './quiz/QuizResultView';
 import { QuizRunView } from './quiz/QuizRunView';
 import { QuizSetupView } from './quiz/QuizSetupView';
 import { QuizStatsPanel } from './quiz/QuizStatsPanel';
+import type { LiveQuizSnapshot } from '../utils/adminRoles';
 
 type QuizPhase = 'setup' | 'running' | 'result';
 
@@ -33,6 +34,15 @@ interface QuizPanelProps {
   cloudEnabled: boolean;
   onRecordQuizSession: (input: RecordQuizSessionInput) => void;
   onClearQuizHistory: () => void;
+  onLiveQuizChange?: (snapshot: LiveQuizSnapshot | null) => void;
+  onQuizStarted?: (bookId: BookData['id'], scopeLabel: string, focus: QuizFocus, total: number) => void;
+  onQuizCompleted?: (
+    bookId: BookData['id'],
+    scopeLabel: string,
+    focus: QuizFocus,
+    correct: number,
+    total: number
+  ) => void;
 }
 
 export function QuizPanel({
@@ -45,6 +55,9 @@ export function QuizPanel({
   cloudEnabled,
   onRecordQuizSession,
   onClearQuizHistory,
+  onLiveQuizChange,
+  onQuizStarted,
+  onQuizCompleted,
 }: QuizPanelProps) {
   const bookChapterNumbers = useMemo<ChapterNumber[]>(
     () => book.chapters.map(c => c.chapterNumber),
@@ -117,6 +130,7 @@ export function QuizPanel({
     setChosenIndex(null);
     setRecords([]);
     setPhase('running');
+    onQuizStarted?.(book.id, scopeLabel, focus, generated.length);
   };
 
   const handleSelectOption = (optionIndex: number) => {
@@ -158,10 +172,40 @@ export function QuizPanel({
       total,
       answers: buildQuizAnswerSnapshots(records),
     });
+    onQuizCompleted?.(book.id, scopeLabel, focus, correct, total);
     setPhase('result');
   };
 
   const correctSoFar = records.filter(r => r.isCorrect).length;
+
+  useEffect(() => {
+    if (!onLiveQuizChange) return;
+    onLiveQuizChange({
+      phase,
+      bookId: book.id,
+      scopeLabel,
+      focus,
+      current: phase === 'running' ? currentIdx + 1 : phase === 'result' ? records.length : 0,
+      total: phase === 'running' ? questions.length : phase === 'result' ? records.length : 0,
+      correct: correctSoFar,
+    });
+  }, [
+    onLiveQuizChange,
+    phase,
+    book.id,
+    scopeLabel,
+    focus,
+    currentIdx,
+    questions.length,
+    records.length,
+    correctSoFar,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      onLiveQuizChange?.(null);
+    };
+  }, [onLiveQuizChange]);
 
   return (
     <section aria-label="Kuis interaktif Irodori Bunpou" className="space-y-5">

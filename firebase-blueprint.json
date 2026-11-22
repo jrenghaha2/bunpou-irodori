@@ -2,7 +2,7 @@
   "entities": {
     "UserProfile": {
       "title": "UserProfile",
-      "description": "Root user profile document for an authenticated Irodori Bunpou learner.",
+      "description": "Root user profile document for an authenticated Irodori Bunpou learner, including RBAC role for real-time monitoring.",
       "type": "object",
       "properties": {
         "uid": {
@@ -14,13 +14,23 @@
         },
         "displayName": {
           "type": "string",
-          "description": "Optional learner display name shown in the header and account menu.",
+          "description": "Optional learner display name shown in the header, account menu, and admin monitoring dashboard.",
           "maxLength": 60
         },
         "avatarUrl": {
           "type": "string",
           "description": "Optional avatar URL (HTTPS or compressed JPEG/PNG/WebP data URI).",
           "maxLength": 20000
+        },
+        "email": {
+          "type": "string",
+          "description": "Lowercase verified email address matching the user's Auth token (visible only to owner and admin/superadmin).",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin", "superadmin"],
+          "description": "RBAC role: user (learner), admin (read-only real-time monitoring), or superadmin (full monitoring + grant/revoke admin)."
         },
         "createdAt": {
           "type": "string",
@@ -30,7 +40,7 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Server timestamp of the latest profile update."
+          "description": "Server timestamp of the latest profile or role update."
         }
       },
       "required": ["uid", "createdAt", "updatedAt"]
@@ -106,12 +116,230 @@
         }
       },
       "required": ["uid", "bookId", "sessions", "createdAt", "updatedAt"]
+    },
+    "LiveActivity": {
+      "title": "LiveActivity",
+      "description": "Real-time per-user learner presence, current activity, live quiz status, and aggregate progress snapshot for Admin/Superadmin monitoring.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID matching the document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Learner display name.",
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "Lowercase verified email matching the learner's Auth token.",
+          "maxLength": 120
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Optional avatar URL (HTTPS or compressed JPEG/PNG/WebP data URI).",
+          "maxLength": 20000
+        },
+        "activeBookId": {
+          "type": "string",
+          "enum": ["introductory", "elementary1", "elementary2"],
+          "description": "Currently selected Irodori book."
+        },
+        "activeTab": {
+          "type": "string",
+          "enum": ["card", "list", "quiz", "guide", "admin"],
+          "description": "Currently open navigation tab."
+        },
+        "activeChapterLabel": {
+          "type": "string",
+          "description": "Human-readable active chapter scope label.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "activityType": {
+          "type": "string",
+          "enum": ["browsing", "flashcard", "list", "quiz_running", "quiz_finished", "guide", "admin"],
+          "description": "Structured real-time activity category."
+        },
+        "activitySummary": {
+          "type": "string",
+          "description": "Concise Bahasa Indonesia description of what the user is doing right now.",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "quizLiveCurrent": {
+          "type": "integer",
+          "description": "Current question number during an active quiz session (0 if idle)."
+        },
+        "quizLiveTotal": {
+          "type": "integer",
+          "description": "Total questions in the active quiz session (0 if idle)."
+        },
+        "quizLiveCorrect": {
+          "type": "integer",
+          "description": "Correct answers count so far during an active quiz session (0 if idle)."
+        },
+        "masteredTotal": {
+          "type": "integer",
+          "description": "Total mastered patterns across all 3 Irodori books."
+        },
+        "hardTotal": {
+          "type": "integer",
+          "description": "Total hard patterns across all 3 Irodori books."
+        },
+        "introMastered": {
+          "type": "integer",
+          "description": "Mastered pattern count in Irodori Pemula."
+        },
+        "elem1Mastered": {
+          "type": "integer",
+          "description": "Mastered pattern count in Irodori Dasar 1."
+        },
+        "elem2Mastered": {
+          "type": "integer",
+          "description": "Mastered pattern count in Irodori Dasar 2."
+        },
+        "latestQuizScore": {
+          "type": "integer",
+          "description": "Percentage score (0-100) of the most recent completed quiz, or -1 if none."
+        },
+        "latestQuizSummary": {
+          "type": "string",
+          "description": "Short summary of the user's latest completed quiz result.",
+          "maxLength": 180
+        },
+        "quizSessionCount": {
+          "type": "integer",
+          "description": "Total recorded quiz sessions across all 3 books."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when live activity tracking started for this user."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest activity heartbeat or action."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "avatarUrl",
+        "activeBookId",
+        "activeTab",
+        "activeChapterLabel",
+        "activityType",
+        "activitySummary",
+        "quizLiveCurrent",
+        "quizLiveTotal",
+        "quizLiveCorrect",
+        "masteredTotal",
+        "hardTotal",
+        "introMastered",
+        "elem1Mastered",
+        "elem2Mastered",
+        "latestQuizScore",
+        "latestQuizSummary",
+        "quizSessionCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ActivityEvent": {
+      "title": "ActivityEvent",
+      "description": "Immutable chronological learning event (quiz started, quiz completed, progress update) visible in real time to Admins and Superadmins.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the learner who triggered the event.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Learner display name at the time of the event.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "Lowercase verified email matching the learner's Auth token.",
+          "maxLength": 120
+        },
+        "eventType": {
+          "type": "string",
+          "enum": ["quiz_started", "quiz_completed", "progress_milestone"],
+          "description": "Category of the recorded learning event."
+        },
+        "bookId": {
+          "type": "string",
+          "enum": ["introductory", "elementary1", "elementary2"],
+          "description": "Irodori book associated with the event."
+        },
+        "scopeLabel": {
+          "type": "string",
+          "description": "Chapter scope label for the event.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "focus": {
+          "type": "string",
+          "enum": ["mixed", "cloze", "formula", "function", "none"],
+          "description": "Quiz focus mode or none for non-quiz events."
+        },
+        "correct": {
+          "type": "integer",
+          "description": "Correct answer count (0 if not applicable)."
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total question or pattern count."
+        },
+        "score": {
+          "type": "integer",
+          "description": "Percentage score (0-100), or -1 if not a scored completion event."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Concise human-readable event description.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the event was logged."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "eventType",
+        "bookId",
+        "scopeLabel",
+        "focus",
+        "correct",
+        "total",
+        "score",
+        "summary",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Root profile document for each authenticated learner (Master Gate parent for all subcollections)."
+      "description": "Root profile document for each authenticated learner including RBAC role (Master Gate parent for all subcollections)."
     },
     "/users/{userId}/bunpouProgress/{bookId}": {
       "schema": { "$ref": "#/entities/BunpouBookProgress" },
@@ -120,6 +348,14 @@
     "/users/{userId}/quizHistory/{bookId}": {
       "schema": { "$ref": "#/entities/BunpouQuizHistory" },
       "description": "Per-book compact quiz session history tokens (introductory, elementary1, elementary2)."
+    },
+    "/liveActivity/{userId}": {
+      "schema": { "$ref": "#/entities/LiveActivity" },
+      "description": "Real-time learner status, active quiz progress, and aggregate mastery snapshot for Admin/Superadmin monitoring."
+    },
+    "/activityEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/ActivityEvent" },
+      "description": "Immutable append-only live activity stream of quiz starts, quiz completions, and milestones."
     }
   }
 }
