@@ -102,7 +102,7 @@
         },
         "sessions": {
           "type": "array",
-          "description": "Up to 15 compact pure-ASCII quiz session reference tokens."
+          "description": "Up to 15 compact pure-ASCII quiz session reference tokens (<= 16000 chars each, supporting 4-segment legacy items and optional 5th Base64URL chosen-answer segment <= 260 chars)."
         },
         "createdAt": {
           "type": "string",

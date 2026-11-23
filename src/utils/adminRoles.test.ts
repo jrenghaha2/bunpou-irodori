@@ -7,9 +7,11 @@ import {
   canManageUserRoles,
   classifyPresenceStatus,
   computeMonitoringKpis,
+  computeUserDetailStats,
   filterActivities,
   filterAdminUsers,
   formatRelativeTimeId,
+  getQuizQuestionTypeLabelId,
   resolveEffectiveRole,
   resolveUserMetrics,
   truncateText,
@@ -239,4 +241,105 @@ test('sorting by time, alphabet, mastered count, and quiz count works accurately
   const merged = resolveUserMetrics(users[2], activities[1], metricsMap.get('u3'));
   assert.equal(merged.quizSessionCount, 9);
   assert.equal(merged.masteredTotal, 35);
+});
+
+test('computeUserDetailStats and real-time authoritative resolveUserMetrics work accurately', () => {
+  const books = [
+    { id: 'introductory' as const, totalPatterns: 82 },
+    { id: 'elementary1' as const, totalPatterns: 95 },
+    { id: 'elementary2' as const, totalPatterns: 87 },
+  ];
+
+  const sessions = [
+    {
+      id: 'q1',
+      completedAt: '2026-11-22T09:17:00.000Z',
+      bookId: 'introductory' as const,
+      scopeLabel: 'Bab 3–10',
+      focus: 'mixed' as const,
+      correct: 5,
+      total: 5,
+      score: 100,
+    },
+    {
+      id: 'q2',
+      completedAt: '2026-11-21T15:10:00.000Z',
+      bookId: 'elementary1' as const,
+      scopeLabel: 'Semua Bab (1–18)',
+      focus: 'cloze' as const,
+      correct: 3,
+      total: 5,
+      score: 60,
+    },
+  ];
+
+  const stats = computeUserDetailStats(
+    books,
+    {
+      introductory: { masteredCount: 20, hardCount: 2, quizSessions: [sessions[0]] },
+      elementary1: { masteredCount: 6, hardCount: 1, quizSessions: [sessions[1]] },
+      elementary2: { masteredCount: 0, hardCount: 0, quizSessions: [] },
+    },
+    sessions
+  );
+
+  assert.equal(stats.masteredTotal, 26);
+  assert.equal(stats.hardTotal, 3);
+  assert.equal(stats.totalPatterns, 264);
+  assert.equal(stats.masteryPct, Math.round((26 / 264) * 100));
+  assert.equal(stats.totalQuizSessions, 2);
+  assert.equal(stats.quizCountByBook.introductory, 1);
+  assert.equal(stats.quizCountByBook.elementary1, 1);
+  assert.equal(stats.quizCountByBook.elementary2, 0);
+  assert.equal(stats.totalCorrect, 8);
+  assert.equal(stats.totalAnswered, 10);
+  assert.equal(stats.averageScore, 80);
+  assert.equal(stats.bestScore, 100);
+
+  assert.equal(getQuizQuestionTypeLabelId('cloze'), 'Isian Rumpang');
+  assert.equal(getQuizQuestionTypeLabelId('formula'), 'Rumus Penyambungan');
+  assert.equal(getQuizQuestionTypeLabelId('function'), 'Fungsi & Makna');
+
+  // Authoritative real-time modal snapshot overrides stale liveActivity (even when user un-marks Hafal)
+  const now = 1_700_000_000_000;
+  const resolved = resolveUserMetrics(
+    { uid: 'u1', updatedAtMs: now - 10_000 },
+    {
+      uid: 'u1',
+      displayName: 'Test',
+      email: 't@example.com',
+      avatarUrl: '',
+      activeBookId: 'introductory',
+      activeTab: 'card',
+      activeChapterLabel: 'Bab 3',
+      activityType: 'flashcard',
+      activitySummary: 'Belajar',
+      quizLiveCurrent: 0,
+      quizLiveTotal: 0,
+      quizLiveCorrect: 0,
+      masteredTotal: 10,
+      hardTotal: 2,
+      introMastered: 10,
+      elem1Mastered: 0,
+      elem2Mastered: 0,
+      latestQuizScore: 80,
+      latestQuizSummary: '',
+      quizSessionCount: 1,
+      updatedAtMs: now - 5_000,
+    },
+    {
+      masteredTotal: 9,
+      hardTotal: 1,
+      introMastered: 9,
+      elem1Mastered: 0,
+      elem2Mastered: 0,
+      quizSessionCount: 2,
+      latestQuizScore: 100,
+      latestActivityMs: now - 1_000,
+      authoritativeAtMs: now,
+    }
+  );
+  assert.equal(resolved.masteredTotal, 9);
+  assert.equal(resolved.quizSessionCount, 2);
+  assert.equal(resolved.latestQuizScore, 100);
 });

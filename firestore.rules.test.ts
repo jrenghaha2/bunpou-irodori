@@ -12,7 +12,7 @@ const ELEM2_ITEM_RE = /^elementary2-bab-([1-9]|1[0-8])-p[1-9][0-9]?$/;
 
 function buildQuizTokenRegex(bookId: string): RegExp {
   return new RegExp(
-    `^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|([1-9]|1[0-8])(\\.([1-9]|1[0-8]))*)\\|(|[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01](;[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01])*)$`
+    `^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|([1-9]|1[0-8])(\\.([1-9]|1[0-8]))*)\\|(|[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01](:[A-Za-z0-9_\\-]{1,260})?(;[1-9][0-9]{0,2}:[0-2]:${bookId}-bab-([1-9]|1[0-8])-p[1-9][0-9]?:[01](:[A-Za-z0-9_\\-]{1,260})?)*)$`
   );
 }
 
@@ -140,7 +140,7 @@ function validateSessions(arr: unknown, bookId: string): boolean {
     item =>
       typeof item === 'string' &&
       item.length >= 24 &&
-      item.length <= 8000 &&
+      item.length <= 16000 &&
       tokenRe.test(item)
   );
 }
@@ -189,6 +189,8 @@ test('firestore.rules structural security invariants (Eight Pillars + 3-Tier RBA
   assert.match(rulesText, /match \/quizHistory\/\{bookId\}/);
   assert.match(rulesText, /match \/liveActivity\/\{userId\}/);
   assert.match(rulesText, /match \/activityEvents\/\{eventId\}/);
+  assert.match(rulesText, /val\.size\(\) <= 16000/);
+  assert.match(rulesText, /\(:?\[A-Za-z0-9_\\\\-\]\{1,260\}\)\?/);
 });
 
 test('3-Tier RBAC adversarial tests: Superadmin vs Admin vs User & Email Spoofing', () => {
@@ -446,8 +448,41 @@ test('Dirty Dozen adversarial payloads on progress & quizHistory return PERMISSI
 
   const validIntroToken =
     'q1700000000_ab12|2026-11-19T04:00:00.000Z|mixed|8|10|80|3.4.5|1:0:introductory-bab-3-p1:1;2:1:introductory-bab-4-p1:0';
+  const validIntro5SegToken =
+    'q1700000000_ab13|2026-11-22T04:00:00.000Z|mixed|8|10|80|3.4.5|1:0:introductory-bab-3-p1:1;2:1:introductory-bab-4-p1:0:TjEg44GuIE4y';
   assert.equal(validateSessions([validIntroToken], 'introductory'), true);
+  assert.equal(validateSessions([validIntro5SegToken], 'introductory'), true);
   assert.equal(validateSessions([validIntroToken], 'elementary1'), false);
+  assert.equal(validateSessions([validIntro5SegToken], 'elementary1'), false);
+  // Reject XSS, separator smuggling, padding, spaces, and >260 char overflow in 5th segment
+  assert.equal(
+    validateSessions(
+      ['q1|2026-11-22T04:00:00.000Z|mixed|0|1|0|all|1:1:introductory-bab-3-p1:0:<script>alert(1)</script>'],
+      'introductory'
+    ),
+    false
+  );
+  assert.equal(
+    validateSessions(
+      ['q1|2026-11-22T04:00:00.000Z|mixed|0|1|0|all|1:1:introductory-bab-3-p1:0:abc:def'],
+      'introductory'
+    ),
+    false
+  );
+  assert.equal(
+    validateSessions(
+      ['q1|2026-11-22T04:00:00.000Z|mixed|0|1|0|all|1:1:introductory-bab-3-p1:0:abc def'],
+      'introductory'
+    ),
+    false
+  );
+  assert.equal(
+    validateSessions(
+      [`q1|2026-11-22T04:00:00.000Z|mixed|0|1|0|all|1:1:introductory-bab-3-p1:0:${'A'.repeat(261)}`],
+      'introductory'
+    ),
+    false
+  );
   assert.equal(
     validateSessions(
       ['q1|2026-11-19T04:00:00.000Z|mixed|8|10|105|all|1:0:introductory-bab-3-p1:1'],

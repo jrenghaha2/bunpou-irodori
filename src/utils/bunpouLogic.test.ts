@@ -276,6 +276,9 @@ test('Flashcard 3D flip CSS classes match FlashcardPanel and Space key stops pro
   assert.match(css, /backface-visibility:\s*hidden;/);
   assert.match(css, /transform:\s*rotateY\(180deg\);/);
   assert.match(panel, /e\.stopPropagation\(\);/);
+  assert.match(panel, /select-text/);
+  assert.doesNotMatch(panel, /select-none/);
+  assert.match(panel, /window\.getSelection/);
 });
 
 test('progress sets normalize disjointly and merge cloud + local without mastered/hard overlap', () => {
@@ -351,5 +354,32 @@ test('Modal focus effect depends only on [open], Flashcard Space shortcut exclud
     'utf8'
   );
   assert.match(headerSrc, /id="btnToggleTranslation"/);
+
+  const liveTrackerSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/hooks/useLiveActivityTracker.ts'),
+    'utf8'
+  );
+  assert.match(liveTrackerSrc, /!progressReady \|\| !quizHistoryReady/);
+
+  const authActionsSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/hooks/useAuthActions.ts'),
+    'utf8'
+  );
+  assert.match(authActionsSrc, /const wasEmailVerified = Boolean\(auth\.currentUser\?\.emailVerified\);/);
+  assert.match(authActionsSrc, /onAfterSignOut\(wasEmailVerified\);/);
+
+  const appSrc = fs.readFileSync(path.resolve(process.cwd(), 'src/App.tsx'), 'utf8');
+  assert.match(appSrc, /detachUnverifiedCloudSession\(\)/);
+  assert.match(appSrc, /progressReady:\s*cloudSync\.progressReady/);
+  assert.match(appSrc, /quizHistoryReady:\s*cloudSync\.quizHistoryReady/);
+
+  const detailModalSrc = fs.readFileSync(
+    path.resolve(process.cwd(), 'src/components/admin/UserDetailMonitorModal.tsx'),
+    'utf8'
+  );
+  assert.match(detailModalSrc, /Jawaban Diklik Siswa:/);
+  assert.match(detailModalSrc, /Kunci Jawaban Benar:/);
+  assert.match(detailModalSrc, /Sudah Hafal/);
+  assert.match(detailModalSrc, /Belum Hafal/);
 });
 

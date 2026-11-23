@@ -22,12 +22,15 @@ import {
   type LiveQuizSnapshot,
 } from '../utils/adminRoles';
 
-const ACTIVITY_DEBOUNCE_MS = 1_500;
+const ACTIVITY_DEBOUNCE_MS = 1_200;
+const METRIC_URGENT_DEBOUNCE_MS = 200;
 const PRESENCE_HEARTBEAT_MS = 90_000;
 
 interface UseLiveActivityTrackerOptions {
   user: User | null;
   offlineFallback: boolean;
+  progressReady: boolean;
+  quizHistoryReady: boolean;
   displayName: string;
   avatarUrl: string;
   activeBookId: BookId;
@@ -81,6 +84,8 @@ function summarizeLatestQuiz(quizHistories: AllBooksQuizHistory): {
 export function useLiveActivityTracker({
   user,
   offlineFallback,
+  progressReady,
+  quizHistoryReady,
   displayName,
   avatarUrl,
   activeBookId,
@@ -94,6 +99,7 @@ export function useLiveActivityTracker({
 }: UseLiveActivityTrackerOptions) {
   const liveDocExistsRef = useRef<Record<string, boolean>>({});
   const lastSignatureRef = useRef<string>('');
+  const lastMetricsSignatureRef = useRef<string>('');
   const lastSentAtRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
   const inFlightRef = useRef<Promise<void>>(Promise.resolve());
@@ -102,7 +108,9 @@ export function useLiveActivityTracker({
   activeUidRef.current = user?.uid ?? null;
 
   const buildPayload = useCallback((): UpsertLiveActivityInput | null => {
-    if (!user || !user.emailVerified || offlineFallback) return null;
+    if (!user || !user.emailVerified || offlineFallback || !progressReady || !quizHistoryReady) {
+      return null;
+    }
 
     const bookLabel = getBookLabelId(activeBookId);
     const introMastered = booksProgress.introductory.mastered.size;
@@ -184,6 +192,8 @@ export function useLiveActivityTracker({
   }, [
     user,
     offlineFallback,
+    progressReady,
+    quizHistoryReady,
     displayName,
     avatarUrl,
     activeBookId,
@@ -197,7 +207,9 @@ export function useLiveActivityTracker({
 
   const flushPayload = useCallback(
     (payload: UpsertLiveActivityInput, force: boolean) => {
-      if (!user || !user.emailVerified || offlineFallback) return;
+      if (!user || !user.emailVerified || offlineFallback || !progressReady || !quizHistoryReady) {
+        return;
+      }
       const signature = JSON.stringify(payload);
       if (!force && signature === lastSignatureRef.current) return;
 
@@ -222,16 +234,20 @@ export function useLiveActivityTracker({
         })
         .catch(() => undefined);
     },
-    [user, offlineFallback, ensureUserProfileDoc]
+    [user, offlineFallback, progressReady, quizHistoryReady, ensureUserProfileDoc]
   );
 
-  // Publish activity on state changes (immediate for live quiz progress, debounced for browsing)
+  // Publish activity on state changes:
+  // - Immediate for live quiz progress & quiz finish
+  // - Near-instant (200ms coalesced) whenever hafalan (mastered/hard) or quiz history count changes
+  // - Debounced (1.2s) for normal card/tab browsing
   useEffect(() => {
     const payload = buildPayload();
     latestPayloadRef.current = payload;
 
     if (!payload) {
       lastSignatureRef.current = '';
+      lastMetricsSignatureRef.current = '';
       return;
     }
 
@@ -239,6 +255,11 @@ export function useLiveActivityTracker({
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+
+    const metricsSig = `${payload.masteredTotal}:${payload.hardTotal}:${payload.introMastered}:${payload.elem1Mastered}:${payload.elem2Mastered}:${payload.quizSessionCount}:${payload.latestQuizScore}`;
+    const metricsChanged =
+      lastMetricsSignatureRef.current !== '' && lastMetricsSignatureRef.current !== metricsSig;
+    lastMetricsSignatureRef.current = metricsSig;
 
     const isUrgentQuizUpdate =
       payload.activityType === 'quiz_running' || payload.activityType === 'quiz_finished';
@@ -248,12 +269,13 @@ export function useLiveActivityTracker({
       return;
     }
 
+    const delayMs = metricsChanged ? METRIC_URGENT_DEBOUNCE_MS : ACTIVITY_DEBOUNCE_MS;
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
       if (latestPayloadRef.current) {
         flushPayload(latestPayloadRef.current, false);
       }
-    }, ACTIVITY_DEBOUNCE_MS);
+    }, delayMs);
 
     return () => {
       if (timerRef.current !== null) {
@@ -265,7 +287,9 @@ export function useLiveActivityTracker({
 
   // Visibility-aware presence heartbeat so "Aktif Sekarang" stays live while studying
   useEffect(() => {
-    if (!user || !user.emailVerified || offlineFallback) return;
+    if (!user || !user.emailVerified || offlineFallback || !progressReady || !quizHistoryReady) {
+      return;
+    }
 
     const intervalId = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return;
@@ -275,7 +299,7 @@ export function useLiveActivityTracker({
     }, PRESENCE_HEARTBEAT_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [user, offlineFallback, flushPayload]);
+  }, [user, offlineFallback, progressReady, quizHistoryReady, flushPayload]);
 
   const recordQuizStartedEvent = useCallback(
     (bookId: BookId, scopeLabel: string, focus: LiveQuizSnapshot['focus'], total: number) => {

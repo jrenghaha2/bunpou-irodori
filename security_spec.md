@@ -31,7 +31,7 @@
 1. **Master Gate**: All operations require `/users/{userId}` to exist (`exists(...)`), evaluated after all cheap static checks.
 2. **Read Access**: `get` permitted for `isOwner(userId) || isAdminOrSuperAdmin()`; `list` remains `false`.
 3. **Write Access**: Strictly `isVerifiedUser() && isOwner(userId)` — even Admins and Superadmins cannot tamper with another learner's study progress or quiz history!
-4. **Strict Validation**: Per-book pattern ID regexes, disjointness, uniqueness, and element-wise quiz session token validation preserved intact.
+4. **Strict Validation**: Per-book pattern ID regexes, disjointness, uniqueness, and element-wise quiz session token validation (`<= 16000` chars per token; backward-compatible 4-segment `no:typeCode:patternId:isCorrectBit` and optional 5th Base64URL distractor segment `:[A-Za-z0-9_-]{1,260}` strictly rejecting XSS, separators, whitespace, and overflow) preserved intact.
 
 ### C. `/liveActivity/{userId}` (`LiveActivity`)
 1. **Master Gate**: Create and update require `/users/{userId}` to exist.

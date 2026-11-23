@@ -1,4 +1,12 @@
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  type Unsubscribe,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import type { BookId, UserRole } from '../types/bunpou';
 import { normalizeEmail, normalizeStoredRole } from '../utils/adminRoles';
@@ -16,11 +24,13 @@ export interface BookProgressSnapshot {
   exists: boolean;
   mastered: unknown;
   hard: unknown;
+  hasPendingWrites?: boolean;
 }
 
 export interface QuizHistorySnapshot {
   exists: boolean;
   sessions: unknown[];
+  hasPendingWrites?: boolean;
 }
 
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfileSnapshot> {
@@ -123,6 +133,37 @@ export async function fetchBookProgressDoc(
   };
 }
 
+export function subscribeBookProgressDoc(
+  uid: string,
+  bookId: BookId,
+  onData: (snap: BookProgressSnapshot) => void,
+  onError: (err: unknown) => void
+): Unsubscribe {
+  const ref = doc(db, 'users', uid, 'bunpouProgress', bookId);
+  return onSnapshot(
+    ref,
+    snap => {
+      if (!snap.exists()) {
+        onData({
+          exists: false,
+          mastered: [],
+          hard: [],
+          hasPendingWrites: snap.metadata.hasPendingWrites,
+        });
+        return;
+      }
+      const data = snap.data();
+      onData({
+        exists: true,
+        mastered: data.mastered,
+        hard: data.hard,
+        hasPendingWrites: snap.metadata.hasPendingWrites,
+      });
+    },
+    onError
+  );
+}
+
 export async function saveBookProgressDoc(
   uid: string,
   bookId: BookId,
@@ -132,12 +173,19 @@ export async function saveBookProgressDoc(
 ): Promise<void> {
   const ref = doc(db, 'users', uid, 'bunpouProgress', bookId);
   if (docExists) {
-    await updateDoc(ref, {
-      mastered,
-      hard,
-      updatedAt: serverTimestamp(),
-    });
-    return;
+    try {
+      await updateDoc(ref, {
+        mastered,
+        hard,
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('No document to update') && !msg.includes('not-found')) {
+        throw err;
+      }
+    }
   }
   await setDoc(ref, {
     uid,
@@ -165,6 +213,35 @@ export async function fetchQuizHistoryDoc(
   };
 }
 
+export function subscribeQuizHistoryDoc(
+  uid: string,
+  bookId: BookId,
+  onData: (snap: QuizHistorySnapshot) => void,
+  onError: (err: unknown) => void
+): Unsubscribe {
+  const ref = doc(db, 'users', uid, 'quizHistory', bookId);
+  return onSnapshot(
+    ref,
+    snap => {
+      if (!snap.exists()) {
+        onData({
+          exists: false,
+          sessions: [],
+          hasPendingWrites: snap.metadata.hasPendingWrites,
+        });
+        return;
+      }
+      const data = snap.data();
+      onData({
+        exists: true,
+        sessions: Array.isArray(data.sessions) ? data.sessions : [],
+        hasPendingWrites: snap.metadata.hasPendingWrites,
+      });
+    },
+    onError
+  );
+}
+
 export async function saveQuizHistoryDoc(
   uid: string,
   bookId: BookId,
@@ -173,11 +250,18 @@ export async function saveQuizHistoryDoc(
 ): Promise<void> {
   const ref = doc(db, 'users', uid, 'quizHistory', bookId);
   if (docExists) {
-    await updateDoc(ref, {
-      sessions,
-      updatedAt: serverTimestamp(),
-    });
-    return;
+    try {
+      await updateDoc(ref, {
+        sessions,
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('No document to update') && !msg.includes('not-found')) {
+        throw err;
+      }
+    }
   }
   await setDoc(ref, {
     uid,

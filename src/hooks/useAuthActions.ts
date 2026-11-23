@@ -227,18 +227,27 @@ export function useAuthActions({ showToast }: UseAuthActionsOptions) {
   }, [authBusy, showToast]);
 
   const executeSignOut = useCallback(
-    async (onAfterSignOut: () => void) => {
+    async (onAfterSignOut: (wasEmailVerified: boolean) => void) => {
       if (authBusy) return;
       setAuthBusy(true);
       try {
+        const wasEmailVerified = Boolean(auth.currentUser?.emailVerified);
         await signOut(auth);
         justSignedInRef.current = false;
-        onAfterSignOut();
-        showToast(
-          'info',
-          'Berhasil Keluar',
-          'Progres & riwayat kuis Irodori Bunpou Anda tetap tersimpan aman di akun Anda.'
-        );
+        onAfterSignOut(wasEmailVerified);
+        if (wasEmailVerified) {
+          showToast(
+            'info',
+            'Berhasil Keluar',
+            'Progres & riwayat kuis Irodori Bunpou Anda tetap tersimpan aman di akun Anda.'
+          );
+        } else {
+          showToast(
+            'info',
+            'Keluar Sebelum Verifikasi',
+            'Anda keluar sebelum verifikasi email. Progres belajar tetap disimpan di perangkat ini agar tidak hilang.'
+          );
+        }
       } catch (err) {
         showToast(
           'error',

@@ -13,11 +13,12 @@ import {
   Users,
 } from 'lucide-react';
 import {
-  fetchUserDetailedMonitoring,
+  detailedMonitoringToMetrics,
   fetchUserSummaryMetrics,
   subscribeActivityEvents,
   subscribeAdminUsers,
   subscribeLiveActivities,
+  subscribeUserDetailedMonitoring,
   updateTargetUserRole,
   type UserDetailedMonitoring,
 } from '../services/adminService';
@@ -266,18 +267,92 @@ export function AdminMonitorPanel({
     [users, userSearch, roleFilter, userSort, mergedMetricsByUid]
   );
 
-  const handleInspectUser = async (uid: string) => {
-    setInspectedUid(uid);
+  // Real-time subscription for inspected user detail modal (6 live doc streams: 3 progress + 3 quiz)
+  useEffect(() => {
+    if (!inspectedUid) {
+      setDetailData(null);
+      setDetailLoading(false);
+      return;
+    }
+
+    let active = true;
     setDetailData(null);
     setDetailLoading(true);
-    try {
-      const result = await fetchUserDetailedMonitoring(uid, validIdsByBook, patternById);
-      setDetailData(result);
-    } catch {
-      showToast('error', 'Gagal Memuat Detail', 'Tidak dapat mengambil progres pengguna saat ini.');
-    } finally {
-      setDetailLoading(false);
+
+    const unsub = subscribeUserDetailedMonitoring(
+      inspectedUid,
+      validIdsByBook,
+      patternById,
+      nextDetail => {
+        if (!active) return;
+        setDetailData(nextDetail);
+        setDetailLoading(false);
+        // Push authoritative live metrics back into list rows & KPIs immediately
+        setHydratedMetrics(prev => {
+          const next = new Map(prev);
+          next.set(inspectedUid, detailedMonitoringToMetrics(nextDetail));
+          return next;
+        });
+      },
+      () => {
+        if (!active) return;
+        setDetailLoading(false);
+        showToast(
+          'error',
+          'Gagal Memuat Detail',
+          'Tidak dapat berlangganan pembaruan progres pengguna saat ini.'
+        );
+      }
+    );
+
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [inspectedUid, validIdsByBook, patternById, showToast]);
+
+  // Whenever a brand-new quiz_completed event streams in real time, refresh that user's metrics
+  const seenCompletedEventIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (events.length === 0) return;
+    if (seenCompletedEventIdsRef.current.size === 0) {
+      for (const ev of events) seenCompletedEventIdsRef.current.add(ev.id);
+      return;
     }
+
+    const uidsToRefresh = new Set<string>();
+    for (const ev of events) {
+      if (!seenCompletedEventIdsRef.current.has(ev.id)) {
+        seenCompletedEventIdsRef.current.add(ev.id);
+        if (ev.eventType === 'quiz_completed' && ev.uid && ev.uid !== inspectedUid) {
+          uidsToRefresh.add(ev.uid);
+        }
+      }
+    }
+
+    if (uidsToRefresh.size === 0) return;
+    let cancelled = false;
+    void Promise.all(
+      [...uidsToRefresh].map(async uid => {
+        const metrics = await fetchUserSummaryMetrics(uid, validIdsByBook);
+        return { uid, metrics: { ...metrics, authoritativeAtMs: Date.now() } };
+      })
+    ).then(items => {
+      if (cancelled) return;
+      setHydratedMetrics(prev => {
+        const next = new Map(prev);
+        for (const item of items) next.set(item.uid, item.metrics);
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [events, inspectedUid, validIdsByBook]);
+
+  const handleInspectUser = (uid: string) => {
+    setInspectedUid(uid);
   };
 
   const handleCommitRoleChange = async (target: AdminUserRecord, nextRole: UserRole) => {
@@ -1084,6 +1159,7 @@ export function AdminMonitorPanel({
         books={books}
         loading={detailLoading}
         detail={detailData}
+        nowMs={nowMs}
         onClose={() => {
           setInspectedUid(null);
           setDetailData(null);

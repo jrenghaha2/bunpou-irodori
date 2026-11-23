@@ -1,3 +1,4 @@
+import { useRef, type MouseEvent, type PointerEvent } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -57,6 +58,43 @@ export function FlashcardPanel({
   const current = deck[safeIdx] ?? null;
   const isMastered = current ? masteredSet.has(current.id) : false;
   const isHard = current ? hardSet.has(current.id) : false;
+
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragSelectRef = useRef(false);
+
+  const handleCardPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+    didDragSelectRef.current = false;
+  };
+
+  const handleCardPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const start = pointerDownPosRef.current;
+    if (!start) return;
+    if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 5) {
+      didDragSelectRef.current = true;
+    }
+  };
+
+  const handleCardPointerUp = () => {
+    pointerDownPosRef.current = null;
+  };
+
+  const handleCardPointerCancel = () => {
+    pointerDownPosRef.current = null;
+    didDragSelectRef.current = false;
+  };
+
+  const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, a, input, select, textarea')) return;
+
+    const wasDrag = didDragSelectRef.current;
+    didDragSelectRef.current = false;
+    const selectedText = window.getSelection?.()?.toString().trim() ?? '';
+    if (wasDrag || selectedText.length > 0) return;
+
+    onFlip();
+  };
 
   return (
     <section aria-label="Kartu hafalan bunpou" className="space-y-4">
@@ -160,7 +198,11 @@ export function FlashcardPanel({
                   ? `Sisi belakang kartu ${current.title}. Klik untuk membalik ke depan.`
                   : `Sisi depan kartu ${current.title}. Klik untuk melihat rumus dan contoh.`
               }
-              onClick={onFlip}
+              onPointerDown={handleCardPointerDown}
+              onPointerMove={handleCardPointerMove}
+              onPointerUp={handleCardPointerUp}
+              onPointerCancel={handleCardPointerCancel}
+              onClick={handleCardClick}
               onKeyDown={e => {
                 if (e.target !== e.currentTarget) return;
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -169,7 +211,7 @@ export function FlashcardPanel({
                   onFlip();
                 }
               }}
-              className={`card-flip-inner relative w-full min-h-[380px] sm:min-h-[420px] cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-indigo-500 rounded-3xl ${
+              className={`card-flip-inner relative w-full min-h-[380px] sm:min-h-[420px] cursor-pointer select-text focus-visible:outline-2 focus-visible:outline-indigo-500 rounded-3xl ${
                 isFlipped ? 'is-flipped' : ''
               }`}
             >
@@ -276,7 +318,6 @@ export function FlashcardPanel({
                         {current.examples.map((ex, idx) => (
                           <div
                             key={idx}
-                            onClick={e => e.stopPropagation()}
                             className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 p-3 flex items-start justify-between gap-3"
                           >
                             <div className="min-w-0 space-y-1">

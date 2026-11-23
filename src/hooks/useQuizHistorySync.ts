@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { User } from 'firebase/auth';
+import type { Unsubscribe } from 'firebase/firestore';
 import { OperationType } from '../firebase';
-import { fetchQuizHistoryDoc, saveQuizHistoryDoc } from '../services/cloudSyncService';
+import { saveQuizHistoryDoc, subscribeQuizHistoryDoc } from '../services/cloudSyncService';
 import type {
   AllBooksQuizHistory,
   AppTab,
@@ -9,6 +10,7 @@ import type {
   BunpouPattern,
   QuizSessionHistoryEntry,
 } from '../types/bunpou';
+import { BOOK_ORDER } from '../types/bunpou';
 import { BOOK_STORAGE_KEYS, createBookRecord } from '../utils/bunpouSync';
 import {
   MAX_QUIZ_HISTORY_ENTRIES,
@@ -31,6 +33,7 @@ interface UseQuizHistorySyncOptions {
   activeTab: AppTab;
   activeBookId: BookId;
   datasetReady: boolean;
+  progressReady: boolean;
   patternById: Map<string, BunpouPattern>;
   offlineFallback: boolean;
   offlineFallbackRef: MutableRefObject<boolean>;
@@ -46,9 +49,8 @@ interface UseQuizHistorySyncOptions {
 
 export function useQuizHistorySync({
   user,
-  activeTab,
-  activeBookId,
   datasetReady,
+  progressReady,
   patternById,
   offlineFallback,
   offlineFallbackRef,
@@ -60,13 +62,14 @@ export function useQuizHistorySync({
     createEmptyAllBooksQuizHistory
   );
   const [quizHistorySyncing, setQuizHistorySyncing] = useState(false);
+  const [quizHistoryReadyUid, setQuizHistoryReadyUid] = useState<string | null>(null);
   const [syncNonce, setSyncNonce] = useState(0);
 
   const quizHistoriesRef = useRef(quizHistories);
   quizHistoriesRef.current = quizHistories;
 
   const quizDocExistsRef = useRef<Record<BookId, boolean>>(createBookRecord(() => false));
-  const loadedQuizCloudBooksRef = useRef<Set<string>>(new Set());
+  const initialSyncedBooksRef = useRef<Set<string>>(new Set());
   const quizWriteQueuesRef = useRef<Record<BookId, Promise<void>>>(
     createBookRecord(() => Promise.resolve())
   );
@@ -78,14 +81,16 @@ export function useQuizHistorySync({
   }, []);
 
   const clearQuizCloudCache = useCallback((resetDocFlags = false) => {
-    loadedQuizCloudBooksRef.current.clear();
+    initialSyncedBooksRef.current.clear();
     if (resetDocFlags) {
       quizDocExistsRef.current = createBookRecord(() => false);
+      setQuizHistoryReadyUid(null);
     }
   }, []);
 
   const triggerQuizHistoryResync = useCallback(() => {
-    loadedQuizCloudBooksRef.current.clear();
+    initialSyncedBooksRef.current.clear();
+    setQuizHistoryReadyUid(null);
     setSyncNonce(n => n + 1);
   }, []);
 
@@ -132,69 +137,112 @@ export function useQuizHistorySync({
     [offlineFallbackRef, ensureUserProfileDoc, handleQuotaOrLog]
   );
 
-  // Lazy-load quiz history from cloud only when user opens Quiz tab for a book (or manually syncs)
+  // 100% Real-Time Firestore subscription across all 3 books as soon as user signs in
+  // and user-switch storage cleanup has settled, so cross-device & local-to-cloud sync are live.
   useEffect(() => {
-    if (!user || !user.emailVerified || !datasetReady || activeTab !== 'quiz') return;
-    if (offlineFallback || offlineFallbackRef.current) return;
-    const cacheKey = `${user.uid}:${activeBookId}`;
-    if (loadedQuizCloudBooksRef.current.has(cacheKey)) return;
+    if (!user || !user.emailVerified || !datasetReady || !progressReady) {
+      setQuizHistorySyncing(false);
+      setQuizHistoryReadyUid(null);
+      return;
+    }
+    if (offlineFallback || offlineFallbackRef.current) {
+      setQuizHistorySyncing(false);
+      setQuizHistoryReadyUid(null);
+      return;
+    }
 
     let cancelled = false;
-    const run = async () => {
-      setQuizHistorySyncing(true);
-      try {
-        const parentOk = await ensureUserProfileDoc(user);
-        if (!parentOk || cancelled) return;
+    const unsubs: Unsubscribe[] = [];
+    const settledBooks = new Set<BookId>();
+    setQuizHistoryReadyUid(null);
 
-        const snap = await fetchQuizHistoryDoc(user.uid, activeBookId);
-        if (cancelled) return;
-
-        const localList = loadQuizHistory(activeBookId);
-        if (snap.exists) {
-          quizDocExistsRef.current[activeBookId] = true;
-          const decoded: QuizSessionHistoryEntry[] = [];
-          for (const tok of snap.sessions) {
-            if (typeof tok === 'string') {
-              const entry = decodeQuizSessionToken(tok, activeBookId, patternById);
-              if (entry) decoded.push(entry);
-            }
-          }
-          const merged = mergeQuizHistories(localList, decoded);
-          saveQuizHistory(activeBookId, merged);
-          setQuizHistories(prev => ({ ...prev, [activeBookId]: merged }));
-          if (merged.length > decoded.length) {
-            await enqueueQuizHistoryWrite(user, activeBookId, merged, false);
-          }
-        } else {
-          quizDocExistsRef.current[activeBookId] = false;
-          if (localList.length > 0) {
-            await enqueueQuizHistoryWrite(user, activeBookId, localList, false);
-          }
-        }
-        loadedQuizCloudBooksRef.current.add(cacheKey);
-      } catch (err) {
-        if (!cancelled) {
-          handleQuotaOrLog(
-            err,
-            OperationType.GET,
-            `users/${user.uid}/quizHistory/${activeBookId}`,
-            false
-          );
-        }
-      } finally {
-        if (!cancelled) setQuizHistorySyncing(false);
+    const markSettled = (bookId: BookId) => {
+      settledBooks.add(bookId);
+      if (!cancelled && settledBooks.size >= BOOK_ORDER.length) {
+        setQuizHistorySyncing(false);
+        setQuizHistoryReadyUid(user.uid);
       }
     };
 
-    void run();
+    const startRealtimeStreams = async () => {
+      setQuizHistorySyncing(true);
+      const parentOk = await ensureUserProfileDoc(user);
+      if (!parentOk || cancelled) {
+        if (!cancelled) setQuizHistorySyncing(false);
+        return;
+      }
+
+      for (const bookId of BOOK_ORDER) {
+        const path = `users/${user.uid}/quizHistory/${bookId}`;
+        const syncKey = `${user.uid}:${bookId}`;
+
+        const unsub = subscribeQuizHistoryDoc(
+          user.uid,
+          bookId,
+          snap => {
+            if (cancelled) return;
+            quizDocExistsRef.current[bookId] = snap.exists;
+
+            const decoded: QuizSessionHistoryEntry[] = [];
+            if (snap.exists) {
+              for (const tok of snap.sessions) {
+                if (typeof tok === 'string') {
+                  const entry = decodeQuizSessionToken(tok, bookId, patternById);
+                  if (entry) decoded.push(entry);
+                }
+              }
+            }
+
+            const isFirstForBook = !initialSyncedBooksRef.current.has(syncKey);
+            if (isFirstForBook) {
+              initialSyncedBooksRef.current.add(syncKey);
+              const localList = loadQuizHistory(bookId);
+              const merged = mergeQuizHistories(localList, decoded);
+              saveQuizHistory(bookId, merged);
+              setQuizHistories(prev => ({ ...prev, [bookId]: merged }));
+              const encodedMerged = merged.map(encodeQuizSessionToken);
+              const rawCloudTokens = snap.exists
+                ? snap.sessions.filter((t): t is string => typeof t === 'string')
+                : [];
+              const cloudNeedsUpgrade =
+                merged.length > decoded.length ||
+                (encodedMerged.length > 0 &&
+                  encodedMerged.some((tok, idx) => tok !== rawCloudTokens[idx]));
+              if (!snap.hasPendingWrites && cloudNeedsUpgrade) {
+                void enqueueQuizHistoryWrite(user, bookId, merged, false);
+              }
+            } else if (!snap.hasPendingWrites) {
+              // Authoritative real-time cloud push from another tab/device or confirmed write
+              const sorted = [...decoded]
+                .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+                .slice(0, MAX_QUIZ_HISTORY_ENTRIES);
+              saveQuizHistory(bookId, sorted);
+              setQuizHistories(prev => ({ ...prev, [bookId]: sorted }));
+            }
+
+            markSettled(bookId);
+          },
+          err => {
+            if (cancelled) return;
+            handleQuotaOrLog(err, OperationType.GET, path, false);
+            markSettled(bookId);
+          }
+        );
+
+        unsubs.push(unsub);
+      }
+    };
+
+    void startRealtimeStreams();
+
     return () => {
       cancelled = true;
+      for (const unsub of unsubs) unsub();
     };
   }, [
     user,
     datasetReady,
-    activeTab,
-    activeBookId,
+    progressReady,
     offlineFallback,
     syncNonce,
     offlineFallbackRef,
@@ -238,6 +286,7 @@ export function useQuizHistorySync({
   return {
     quizHistories,
     quizHistorySyncing,
+    quizHistoryReady: Boolean(user && quizHistoryReadyUid === user.uid),
     handleRecordQuizSession,
     handleClearQuizHistory,
     hydrateLocalQuizHistories,

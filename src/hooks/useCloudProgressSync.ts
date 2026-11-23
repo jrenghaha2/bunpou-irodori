@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { User } from 'firebase/auth';
+import type { Unsubscribe } from 'firebase/firestore';
 import { OperationType, isFirestoreQuotaError, logFirestoreError } from '../firebase';
-import { fetchBookProgressDoc, saveBookProgressDoc } from '../services/cloudSyncService';
+import {
+  fetchBookProgressDoc,
+  saveBookProgressDoc,
+  subscribeBookProgressDoc,
+} from '../services/cloudSyncService';
 import type { AllBooksProgress, AppTab, BookId, BunpouPattern } from '../types/bunpou';
 import { BOOK_ORDER } from '../types/bunpou';
 import {
@@ -59,6 +64,7 @@ export function useCloudProgressSync({
   const [syncing, setSyncing] = useState(false);
   const [fatalError, setFatalError] = useState<Error | null>(null);
   const [offlineFallback, setOfflineFallback] = useState(false);
+  const [realtimeReadyUid, setRealtimeReadyUid] = useState<string | null>(null);
 
   const offlineFallbackRef = useRef(false);
   offlineFallbackRef.current = offlineFallback;
@@ -135,6 +141,7 @@ export function useCloudProgressSync({
     activeTab,
     activeBookId,
     datasetReady,
+    progressReady: Boolean(user && realtimeReadyUid === user.uid),
     patternById,
     offlineFallback,
     offlineFallbackRef,
@@ -368,6 +375,7 @@ export function useCloudProgressSync({
         }
         booksProgressRef.current = nextBooks;
         setBooksProgress(nextBooks);
+        setRealtimeReadyUid(u.uid);
 
         if (announce) {
           const totalMastered = BOOK_ORDER.reduce(
@@ -409,11 +417,13 @@ export function useCloudProgressSync({
       quizSync.clearQuizCloudCache(true);
       progressDocExistsRef.current = createBookRecord(() => false);
       setOfflineFallback(false);
+      setRealtimeReadyUid(null);
       return;
     }
 
     const announce = justSignedInRef.current;
     justSignedInRef.current = false;
+    setRealtimeReadyUid(null);
     void syncAllFromCloud(user, announce);
   }, [
     authReady,
@@ -426,6 +436,68 @@ export function useCloudProgressSync({
     profile.resetProfileState,
     quizSync.clearQuizCloudCache,
   ]);
+
+  // 100% Real-Time Firestore listeners for bunpouProgress across all 3 books once initial merge settles
+  useEffect(() => {
+    if (!user || !user.emailVerified || !datasetReady || offlineFallback) return;
+    if (realtimeReadyUid !== user.uid) return;
+
+    let cancelled = false;
+    const unsubs: Unsubscribe[] = [];
+
+    for (const bookId of BOOK_ORDER) {
+      const path = `users/${user.uid}/bunpouProgress/${bookId}`;
+      const unsub = subscribeBookProgressDoc(
+        user.uid,
+        bookId,
+        snap => {
+          if (cancelled || activeUidRef.current !== user.uid) return;
+          progressDocExistsRef.current[bookId] = snap.exists;
+          // Skip local echoes or snapshots arriving while a local debounced write is still pending
+          if (snap.hasPendingWrites || progressWriteTimersRef.current[bookId] !== null) return;
+
+          const validIds = validIdsByBook[bookId];
+          const cloudM = new Set(sanitizeIdArray(snap.mastered, validIds));
+          const cloudH = new Set(sanitizeIdArray(snap.hard, validIds));
+          const cleanCloud = normalizeDisjointSets(cloudM, cloudH, validIds);
+          const current = booksProgressRef.current[bookId];
+
+          if (
+            areSetsEqual(cleanCloud.mastered, current.mastered) &&
+            areSetsEqual(cleanCloud.hard, current.hard)
+          ) {
+            return;
+          }
+
+          const keys = BOOK_STORAGE_KEYS[bookId];
+          commitScopedProgressTransaction(
+            keys.masteredKey,
+            keys.hardKey,
+            cleanCloud.mastered,
+            cleanCloud.hard
+          );
+
+          const nextState: AllBooksProgress = {
+            ...booksProgressRef.current,
+            [bookId]: cleanCloud,
+          };
+          booksProgressRef.current = nextState;
+          setBooksProgress(nextState);
+        },
+        err => {
+          if (!cancelled) {
+            handleQuotaOrLog(err, OperationType.GET, path, false);
+          }
+        }
+      );
+      unsubs.push(unsub);
+    }
+
+    return () => {
+      cancelled = true;
+      for (const unsub of unsubs) unsub();
+    };
+  }, [user, datasetReady, offlineFallback, realtimeReadyUid, validIdsByBook, handleQuotaOrLog]);
 
   const applyProgressChange = useCallback(
     (nextMastered: Set<string>, nextHard: Set<string>, targetBookId?: BookId): boolean => {
@@ -478,14 +550,29 @@ export function useCloudProgressSync({
     profile.resetProfileState(false);
     quizSync.resetQuizHistories();
     progressDocExistsRef.current = createBookRecord(() => false);
+    setRealtimeReadyUid(null);
     return { emptyM: new Set<string>(), emptyH: new Set<string>() };
   }, [clearPendingWriteTimers, profile.resetProfileState, quizSync.resetQuizHistories]);
+
+  const detachUnverifiedCloudSession = useCallback(() => {
+    syncEpochRef.current += 1;
+    clearPendingWriteTimers();
+    setStoredOwnerUid(null);
+    profile.resetProfileState(false);
+    quizSync.clearQuizCloudCache(true);
+    progressDocExistsRef.current = createBookRecord(() => false);
+    setRealtimeReadyUid(null);
+  }, [clearPendingWriteTimers, profile.resetProfileState, quizSync.clearQuizCloudCache]);
+
+  const progressReady = Boolean(user && realtimeReadyUid === user.uid);
 
   return {
     booksProgress,
     quizHistories: quizSync.quizHistories,
     syncing,
     quizHistorySyncing: quizSync.quizHistorySyncing,
+    progressReady,
+    quizHistoryReady: quizSync.quizHistoryReady,
     fatalError,
     offlineFallback,
     enableOfflineFallback,
@@ -502,5 +589,6 @@ export function useCloudProgressSync({
     handleManualSync,
     handleSaveProfile: profile.handleSaveProfile,
     resetCloudAndLocalProgress,
+    detachUnverifiedCloudSession,
   };
 }

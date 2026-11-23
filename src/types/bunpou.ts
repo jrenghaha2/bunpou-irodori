@@ -153,13 +153,17 @@ export interface QuizAnswerSnapshot {
   type: QuizQuestionType;
   correct: boolean;
   patternId: string;
+  chapterNumber?: ChapterNumber;
   patternTitle: string;
   shortPattern: string;
   formula: string;
   functionText: string;
   expectedLabel: string;
   chosenLabel: string;
+  promptText?: string;
+  clozePromptJp?: string;
   exampleJp?: string;
+  translationId?: string;
 }
 
 export interface QuizSessionHistoryEntry {

@@ -1,4 +1,12 @@
-import type { AppTab, BookId, QuizFocus, UserRole } from '../types/bunpou';
+import type {
+  AppTab,
+  BookData,
+  BookId,
+  QuizFocus,
+  QuizQuestionType,
+  QuizSessionHistoryEntry,
+  UserRole,
+} from '../types/bunpou';
 
 export const BOOTSTRAP_SUPERADMIN_EMAIL = 'jrenghaha2@gmail.com';
 
@@ -99,6 +107,7 @@ export interface UserMonitorMetrics {
   quizSessionCount: number;
   latestQuizScore: number;
   latestActivityMs: number;
+  authoritativeAtMs?: number;
 }
 
 export function normalizeEmail(email: string | null | undefined): string {
@@ -202,38 +211,140 @@ export function truncateText(text: string, maxLen: number): string {
   return `${trimmed.slice(0, maxLen - 1).trimEnd()}…`;
 }
 
+export function getQuizQuestionTypeLabelId(type: QuizQuestionType): string {
+  if (type === 'cloze') return 'Isian Rumpang';
+  if (type === 'formula') return 'Rumus Penyambungan';
+  return 'Fungsi & Makna';
+}
+
+export interface UserDetailSummaryStats {
+  masteredTotal: number;
+  hardTotal: number;
+  totalPatterns: number;
+  masteryPct: number;
+  masteredByBook: Record<BookId, number>;
+  quizCountByBook: Record<BookId, number>;
+  totalQuizSessions: number;
+  totalCorrect: number;
+  totalAnswered: number;
+  averageScore: number | null;
+  bestScore: number | null;
+}
+
+export function computeUserDetailStats(
+  books: readonly Pick<BookData, 'id' | 'totalPatterns'>[],
+  bookStats: Record<
+    BookId,
+    { masteredCount: number; hardCount: number; quizSessions: readonly QuizSessionHistoryEntry[] }
+  >,
+  allQuizSessions: readonly QuizSessionHistoryEntry[]
+): UserDetailSummaryStats {
+  const masteredByBook: Record<BookId, number> = {
+    introductory: bookStats.introductory?.masteredCount ?? 0,
+    elementary1: bookStats.elementary1?.masteredCount ?? 0,
+    elementary2: bookStats.elementary2?.masteredCount ?? 0,
+  };
+  const quizCountByBook: Record<BookId, number> = {
+    introductory: bookStats.introductory?.quizSessions.length ?? 0,
+    elementary1: bookStats.elementary1?.quizSessions.length ?? 0,
+    elementary2: bookStats.elementary2?.quizSessions.length ?? 0,
+  };
+
+  let totalPatterns = 0;
+  let hardTotal = 0;
+  for (const b of books) {
+    totalPatterns += b.totalPatterns;
+    hardTotal += bookStats[b.id]?.hardCount ?? 0;
+  }
+
+  const masteredTotal =
+    masteredByBook.introductory + masteredByBook.elementary1 + masteredByBook.elementary2;
+  const masteryPct = totalPatterns > 0 ? Math.round((masteredTotal / totalPatterns) * 100) : 0;
+
+  let totalCorrect = 0;
+  let totalAnswered = 0;
+  let bestScore: number | null = null;
+  for (const s of allQuizSessions) {
+    totalCorrect += s.correct;
+    totalAnswered += s.total;
+    if (bestScore === null || s.score > bestScore) bestScore = s.score;
+  }
+
+  const averageScore =
+    totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : null;
+
+  return {
+    masteredTotal,
+    hardTotal,
+    totalPatterns,
+    masteryPct,
+    masteredByBook,
+    quizCountByBook,
+    totalQuizSessions: allQuizSessions.length,
+    totalCorrect,
+    totalAnswered,
+    averageScore,
+    bestScore,
+  };
+}
+
 export function resolveUserMetrics(
   user: Pick<AdminUserRecord, 'uid' | 'updatedAtMs'>,
   live: LiveActivityRecord | undefined,
   hydrated: UserMonitorMetrics | undefined
 ): UserMonitorMetrics {
-  const masteredTotal = Math.max(live?.masteredTotal ?? 0, hydrated?.masteredTotal ?? 0);
-  const hardTotal = live ? live.hardTotal : hydrated?.hardTotal ?? 0;
-  const introMastered = Math.max(live?.introMastered ?? 0, hydrated?.introMastered ?? 0);
-  const elem1Mastered = Math.max(live?.elem1Mastered ?? 0, hydrated?.elem1Mastered ?? 0);
-  const elem2Mastered = Math.max(live?.elem2Mastered ?? 0, hydrated?.elem2Mastered ?? 0);
-  const quizSessionCount = Math.max(live?.quizSessionCount ?? 0, hydrated?.quizSessionCount ?? 0);
-  const latestQuizScore =
-    live && live.latestQuizScore >= 0
-      ? live.latestQuizScore
-      : hydrated && hydrated.latestQuizScore >= 0
-        ? hydrated.latestQuizScore
-        : -1;
-  const latestActivityMs = Math.max(
-    live?.updatedAtMs ?? 0,
-    hydrated?.latestActivityMs ?? 0,
-    user.updatedAtMs ?? 0
-  );
+  const liveUpdatedAt = live?.updatedAtMs ?? 0;
+  const authAt = hydrated?.authoritativeAtMs ?? 0;
+  const preferHydrated = Boolean(hydrated && authAt > 0 && authAt >= liveUpdatedAt);
+
+  if (preferHydrated && hydrated) {
+    return {
+      ...hydrated,
+      latestActivityMs: Math.max(liveUpdatedAt, hydrated.latestActivityMs, user.updatedAtMs ?? 0),
+    };
+  }
+
+  if (live && liveUpdatedAt > 0) {
+    const useLiveMastered =
+      live.masteredTotal > 0 || !hydrated || hydrated.masteredTotal === 0 || liveUpdatedAt > (hydrated.latestActivityMs ?? 0);
+    const masteredTotal = useLiveMastered
+      ? live.masteredTotal
+      : hydrated.masteredTotal;
+    const hardTotal = useLiveMastered ? live.hardTotal : hydrated.hardTotal;
+    const introMastered = useLiveMastered ? live.introMastered : hydrated.introMastered;
+    const elem1Mastered = useLiveMastered ? live.elem1Mastered : hydrated.elem1Mastered;
+    const elem2Mastered = useLiveMastered ? live.elem2Mastered : hydrated.elem2Mastered;
+    const quizSessionCount =
+      live.quizSessionCount > 0
+        ? live.quizSessionCount
+        : Math.max(live.quizSessionCount, hydrated?.quizSessionCount ?? 0);
+    const latestQuizScore =
+      live.latestQuizScore >= 0
+        ? live.latestQuizScore
+        : hydrated && hydrated.latestQuizScore >= 0
+          ? hydrated.latestQuizScore
+          : -1;
+    return {
+      masteredTotal,
+      hardTotal,
+      introMastered,
+      elem1Mastered,
+      elem2Mastered,
+      quizSessionCount,
+      latestQuizScore,
+      latestActivityMs: Math.max(liveUpdatedAt, hydrated?.latestActivityMs ?? 0, user.updatedAtMs ?? 0),
+    };
+  }
 
   return {
-    masteredTotal,
-    hardTotal,
-    introMastered,
-    elem1Mastered,
-    elem2Mastered,
-    quizSessionCount,
-    latestQuizScore,
-    latestActivityMs,
+    masteredTotal: hydrated?.masteredTotal ?? 0,
+    hardTotal: hydrated?.hardTotal ?? 0,
+    introMastered: hydrated?.introMastered ?? 0,
+    elem1Mastered: hydrated?.elem1Mastered ?? 0,
+    elem2Mastered: hydrated?.elem2Mastered ?? 0,
+    quizSessionCount: hydrated?.quizSessionCount ?? 0,
+    latestQuizScore: hydrated?.latestQuizScore ?? -1,
+    latestActivityMs: Math.max(hydrated?.latestActivityMs ?? 0, user.updatedAtMs ?? 0),
   };
 }
 

@@ -36,7 +36,12 @@ import {
 } from '../utils/adminRoles';
 import { isValidAvatarUrl, sanitizeDisplayName, sanitizeIdArray } from '../utils/bunpouSync';
 import { decodeQuizSessionToken } from '../utils/quizStats';
-import { fetchBookProgressDoc, fetchQuizHistoryDoc } from './cloudSyncService';
+import {
+  fetchBookProgressDoc,
+  fetchQuizHistoryDoc,
+  subscribeBookProgressDoc,
+  subscribeQuizHistoryDoc,
+} from './cloudSyncService';
 
 function toMillis(val: unknown): number {
   if (val instanceof Timestamp) return val.toMillis();
@@ -444,6 +449,8 @@ export interface UserBookDetailedMonitoring {
   bookId: BookId;
   masteredCount: number;
   hardCount: number;
+  masteredIds: string[];
+  hardIds: string[];
   quizSessions: QuizSessionHistoryEntry[];
 }
 
@@ -463,15 +470,15 @@ export async function fetchUserDetailedMonitoring(
       const progressPath = `users/${targetUid}/bunpouProgress/${bookId}`;
       const quizPath = `users/${targetUid}/quizHistory/${bookId}`;
 
-      let masteredCount = 0;
-      let hardCount = 0;
+      let masteredIds: string[] = [];
+      let hardIds: string[] = [];
       let quizSessions: QuizSessionHistoryEntry[] = [];
 
       try {
         const pSnap = await fetchBookProgressDoc(targetUid, bookId);
         if (pSnap.exists) {
-          masteredCount = sanitizeIdArray(pSnap.mastered, validIdsByBook[bookId]).length;
-          hardCount = sanitizeIdArray(pSnap.hard, validIdsByBook[bookId]).length;
+          masteredIds = sanitizeIdArray(pSnap.mastered, validIdsByBook[bookId]);
+          hardIds = sanitizeIdArray(pSnap.hard, validIdsByBook[bookId]);
         }
       } catch (err) {
         logFirestoreError(err, OperationType.GET, progressPath);
@@ -489,7 +496,14 @@ export async function fetchUserDetailedMonitoring(
         logFirestoreError(err, OperationType.GET, quizPath);
       }
 
-      return { bookId, masteredCount, hardCount, quizSessions };
+      return {
+        bookId,
+        masteredCount: masteredIds.length,
+        hardCount: hardIds.length,
+        masteredIds,
+        hardIds,
+        quizSessions,
+      };
     })
   );
 
@@ -507,5 +521,178 @@ export async function fetchUserDetailedMonitoring(
     uid: targetUid,
     books,
     allQuizSessions,
+  };
+}
+
+export function detailedMonitoringToMetrics(
+  detail: UserDetailedMonitoring
+): UserMonitorMetrics {
+  const introMastered = detail.books.introductory?.masteredCount ?? 0;
+  const elem1Mastered = detail.books.elementary1?.masteredCount ?? 0;
+  const elem2Mastered = detail.books.elementary2?.masteredCount ?? 0;
+  const hardTotal =
+    (detail.books.introductory?.hardCount ?? 0) +
+    (detail.books.elementary1?.hardCount ?? 0) +
+    (detail.books.elementary2?.hardCount ?? 0);
+
+  const newestQuiz = detail.allQuizSessions[0];
+  const latestQuizMs = newestQuiz ? Date.parse(newestQuiz.completedAt) : 0;
+
+  return {
+    masteredTotal: introMastered + elem1Mastered + elem2Mastered,
+    hardTotal,
+    introMastered,
+    elem1Mastered,
+    elem2Mastered,
+    quizSessionCount: detail.allQuizSessions.length,
+    latestQuizScore: newestQuiz ? newestQuiz.score : -1,
+    latestActivityMs: Number.isFinite(latestQuizMs) ? latestQuizMs : 0,
+    authoritativeAtMs: Date.now(),
+  };
+}
+
+/**
+ * Attaches 6 real-time Firestore document listeners (3 bunpouProgress + 3 quizHistory)
+ * for a target user so Admin/Superadmin sees mastery & quiz updates live without refreshing.
+ * Uses individual `doc()` get listeners to remain 100% compliant with `allow list: if false`.
+ */
+export function subscribeUserDetailedMonitoring(
+  targetUid: string,
+  validIdsByBook: Record<BookId, Set<string>>,
+  patternById: Map<string, BunpouPattern>,
+  onData: (detail: UserDetailedMonitoring) => void,
+  onError?: (err: unknown) => void
+): Unsubscribe {
+  const booksState: Record<BookId, UserBookDetailedMonitoring> = {
+    introductory: {
+      bookId: 'introductory',
+      masteredCount: 0,
+      hardCount: 0,
+      masteredIds: [],
+      hardIds: [],
+      quizSessions: [],
+    },
+    elementary1: {
+      bookId: 'elementary1',
+      masteredCount: 0,
+      hardCount: 0,
+      masteredIds: [],
+      hardIds: [],
+      quizSessions: [],
+    },
+    elementary2: {
+      bookId: 'elementary2',
+      masteredCount: 0,
+      hardCount: 0,
+      masteredIds: [],
+      hardIds: [],
+      quizSessions: [],
+    },
+  };
+
+  const settledStreams = new Set<string>();
+  const totalStreams = BOOK_ORDER.length * 2;
+  let emittedOnce = false;
+  let active = true;
+
+  const emitSnapshot = () => {
+    if (!active) return;
+    if (!emittedOnce && settledStreams.size < totalStreams) return;
+    emittedOnce = true;
+
+    const booksCopy: Record<BookId, UserBookDetailedMonitoring> = {
+      introductory: { ...booksState.introductory },
+      elementary1: { ...booksState.elementary1 },
+      elementary2: { ...booksState.elementary2 },
+    };
+    const allQuizSessions: QuizSessionHistoryEntry[] = [
+      ...booksState.introductory.quizSessions,
+      ...booksState.elementary1.quizSessions,
+      ...booksState.elementary2.quizSessions,
+    ].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+
+    onData({
+      uid: targetUid,
+      books: booksCopy,
+      allQuizSessions,
+    });
+  };
+
+  const unsubs: Unsubscribe[] = [];
+
+  for (const bookId of BOOK_ORDER) {
+    const progressKey = `progress:${bookId}`;
+    const progressPath = `users/${targetUid}/bunpouProgress/${bookId}`;
+
+    unsubs.push(
+      subscribeBookProgressDoc(
+        targetUid,
+        bookId,
+        snap => {
+          if (snap.exists) {
+            const masteredIds = sanitizeIdArray(snap.mastered, validIdsByBook[bookId]);
+            const hardIds = sanitizeIdArray(snap.hard, validIdsByBook[bookId]);
+            booksState[bookId] = {
+              ...booksState[bookId],
+              masteredCount: masteredIds.length,
+              hardCount: hardIds.length,
+              masteredIds,
+              hardIds,
+            };
+          } else {
+            booksState[bookId] = {
+              ...booksState[bookId],
+              masteredCount: 0,
+              hardCount: 0,
+              masteredIds: [],
+              hardIds: [],
+            };
+          }
+          settledStreams.add(progressKey);
+          emitSnapshot();
+        },
+        err => {
+          logFirestoreError(err, OperationType.GET, progressPath);
+          settledStreams.add(progressKey);
+          emitSnapshot();
+          onError?.(err);
+        }
+      )
+    );
+
+    const quizKey = `quiz:${bookId}`;
+    const quizPath = `users/${targetUid}/quizHistory/${bookId}`;
+
+    unsubs.push(
+      subscribeQuizHistoryDoc(
+        targetUid,
+        bookId,
+        snap => {
+          const decoded = snap.exists
+            ? snap.sessions
+                .filter((t): t is string => typeof t === 'string')
+                .map(t => decodeQuizSessionToken(t, bookId, patternById))
+                .filter((entry): entry is QuizSessionHistoryEntry => entry !== null)
+            : [];
+          booksState[bookId] = {
+            ...booksState[bookId],
+            quizSessions: decoded,
+          };
+          settledStreams.add(quizKey);
+          emitSnapshot();
+        },
+        err => {
+          logFirestoreError(err, OperationType.GET, quizPath);
+          settledStreams.add(quizKey);
+          emitSnapshot();
+          onError?.(err);
+        }
+      )
+    );
+  }
+
+  return () => {
+    active = false;
+    for (const unsub of unsubs) unsub();
   };
 }

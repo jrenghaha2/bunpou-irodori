@@ -220,10 +220,14 @@ export default function App() {
   }, [activeBook.shortTitle, activeBookId, cloudSync, deck.resetDeckAfterBookReset, showToast]);
 
   const handleSignOut = useCallback(() => {
-    void authActions.executeSignOut(() => {
-      cloudSync.resetCloudAndLocalProgress();
+    void authActions.executeSignOut(wasEmailVerified => {
+      if (wasEmailVerified) {
+        cloudSync.resetCloudAndLocalProgress();
+        deck.resetDeckToFirst();
+      } else {
+        cloudSync.detachUnverifiedCloudSession();
+      }
       backupRestore.clearPendingRestore();
-      deck.resetDeckToFirst();
     });
   }, [authActions, cloudSync, backupRestore, deck.resetDeckToFirst]);
 
@@ -267,6 +271,8 @@ export default function App() {
   const liveTracker = useLiveActivityTracker({
     user: authActions.user,
     offlineFallback: cloudSync.offlineFallback,
+    progressReady: cloudSync.progressReady,
+    quizHistoryReady: cloudSync.quizHistoryReady,
     displayName: resolvedDisplayName,
     avatarUrl: resolvedAvatarUrl,
     activeBookId,
