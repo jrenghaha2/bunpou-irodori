@@ -248,6 +248,45 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidLiveQuizOptions(arr) {
+      return arr is list
+        && (
+          arr.size() == 0
+          || (
+            arr.size() == 4
+            && arr[0] is string && arr[0].size() <= 220
+            && arr[1] is string && arr[1].size() <= 220
+            && arr[2] is string && arr[2].size() <= 220
+            && arr[3] is string && arr[3].size() <= 220
+          )
+        );
+    }
+
+    function isValidOptionalLiveQuizFields(data) {
+      return (!('quizLiveType' in data) || (data.quizLiveType is string && data.quizLiveType in ['', 'cloze', 'formula', 'function']))
+        && (!('quizLiveChapter' in data) || (data.quizLiveChapter is int && data.quizLiveChapter >= 0 && data.quizLiveChapter <= 18))
+        && (!('quizLivePatternTitle' in data) || (data.quizLivePatternTitle is string && data.quizLivePatternTitle.size() <= 120))
+        && (!('quizLivePrompt' in data) || (data.quizLivePrompt is string && data.quizLivePrompt.size() <= 320))
+        && (!('quizLiveJapanese' in data) || (data.quizLiveJapanese is string && data.quizLiveJapanese.size() <= 400))
+        && (!('quizLiveOptions' in data) || isValidLiveQuizOptions(data.quizLiveOptions))
+        && (!('quizLiveCorrectIndex' in data) || (data.quizLiveCorrectIndex is int && data.quizLiveCorrectIndex >= -1 && data.quizLiveCorrectIndex <= 3))
+        && (!('quizLiveChosenIndex' in data) || (data.quizLiveChosenIndex is int && data.quizLiveChosenIndex >= -1 && data.quizLiveChosenIndex <= 3))
+        && (
+          !('quizLiveOptions' in data)
+          || (
+            data.quizLiveOptions.size() == 0
+            && (!('quizLiveCorrectIndex' in data) || data.quizLiveCorrectIndex == -1)
+            && (!('quizLiveChosenIndex' in data) || data.quizLiveChosenIndex == -1)
+          )
+          || (
+            data.quizLiveOptions.size() == 4
+            && ('quizLiveCorrectIndex' in data)
+            && data.quizLiveCorrectIndex >= 0
+            && data.quizLiveCorrectIndex <= 3
+          )
+        );
+    }
+
     // Standalone Validation Blueprint for LiveActivity (safe for both create and update)
     function isValidLiveActivity(data, userId) {
       return data.keys().hasAll([
@@ -287,6 +326,14 @@ service cloud.firestore {
           'quizLiveCurrent',
           'quizLiveTotal',
           'quizLiveCorrect',
+          'quizLiveType',
+          'quizLiveChapter',
+          'quizLivePatternTitle',
+          'quizLivePrompt',
+          'quizLiveJapanese',
+          'quizLiveOptions',
+          'quizLiveCorrectIndex',
+          'quizLiveChosenIndex',
           'masteredTotal',
           'hardTotal',
           'introMastered',
@@ -323,6 +370,7 @@ service cloud.firestore {
         && data.quizLiveTotal is int && data.quizLiveTotal >= 0 && data.quizLiveTotal <= 300
         && data.quizLiveCorrect is int && data.quizLiveCorrect >= 0 && data.quizLiveCorrect <= 300
         && data.quizLiveCorrect <= data.quizLiveTotal
+        && isValidOptionalLiveQuizFields(data)
         && data.masteredTotal is int && data.masteredTotal >= 0 && data.masteredTotal <= 300
         && data.hardTotal is int && data.hardTotal >= 0 && data.hardTotal <= 300
         && data.introMastered is int && data.introMastered >= 0 && data.introMastered <= 150
@@ -579,6 +627,14 @@ service cloud.firestore {
           'quizLiveCurrent',
           'quizLiveTotal',
           'quizLiveCorrect',
+          'quizLiveType',
+          'quizLiveChapter',
+          'quizLivePatternTitle',
+          'quizLivePrompt',
+          'quizLiveJapanese',
+          'quizLiveOptions',
+          'quizLiveCorrectIndex',
+          'quizLiveChosenIndex',
           'masteredTotal',
           'hardTotal',
           'introMastered',

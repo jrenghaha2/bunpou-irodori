@@ -180,6 +180,7 @@ export function QuizPanel({
 
   useEffect(() => {
     if (!onLiveQuizChange) return;
+    const activeQuestion = phase === 'running' ? questions[currentIdx] : undefined;
     onLiveQuizChange({
       phase,
       bookId: book.id,
@@ -188,6 +189,18 @@ export function QuizPanel({
       current: phase === 'running' ? currentIdx + 1 : phase === 'result' ? records.length : 0,
       total: phase === 'running' ? questions.length : phase === 'result' ? records.length : 0,
       correct: correctSoFar,
+      questionType: activeQuestion?.type,
+      chapterNumber: activeQuestion?.pattern.chapterNumber,
+      patternTitle: activeQuestion?.pattern.title,
+      prompt: activeQuestion
+        ? showTranslation
+          ? activeQuestion.prompt
+          : (activeQuestion.promptWithoutTranslation ?? activeQuestion.prompt)
+        : undefined,
+      japanesePrompt: activeQuestion ? (activeQuestion.japanesePrompt ?? '') : undefined,
+      options: activeQuestion ? activeQuestion.options.slice(0, 4) : undefined,
+      correctIndex: activeQuestion ? activeQuestion.correctIndex : undefined,
+      chosenIndex: activeQuestion ? (chosenIndex ?? -1) : undefined,
     });
   }, [
     onLiveQuizChange,
@@ -196,7 +209,9 @@ export function QuizPanel({
     scopeLabel,
     focus,
     currentIdx,
-    questions.length,
+    questions,
+    chosenIndex,
+    showTranslation,
     records.length,
     correctSoFar,
   ]);

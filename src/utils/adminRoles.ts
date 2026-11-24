@@ -46,6 +46,14 @@ export interface LiveQuizSnapshot {
   current: number;
   total: number;
   correct: number;
+  questionType?: QuizQuestionType;
+  chapterNumber?: number;
+  patternTitle?: string;
+  prompt?: string;
+  japanesePrompt?: string;
+  options?: string[];
+  correctIndex?: number;
+  chosenIndex?: number;
 }
 
 export interface LiveActivityRecord {
@@ -61,6 +69,14 @@ export interface LiveActivityRecord {
   quizLiveCurrent: number;
   quizLiveTotal: number;
   quizLiveCorrect: number;
+  quizLiveType: QuizQuestionType | '';
+  quizLiveChapter: number;
+  quizLivePatternTitle: string;
+  quizLivePrompt: string;
+  quizLiveJapanese: string;
+  quizLiveOptions: string[];
+  quizLiveCorrectIndex: number;
+  quizLiveChosenIndex: number;
   masteredTotal: number;
   hardTotal: number;
   introMastered: number;
@@ -215,6 +231,101 @@ export function getQuizQuestionTypeLabelId(type: QuizQuestionType): string {
   if (type === 'cloze') return 'Isian Rumpang';
   if (type === 'formula') return 'Rumus Penyambungan';
   return 'Fungsi & Makna';
+}
+
+export function hasLiveQuizQuestion(
+  act: Pick<
+    LiveActivityRecord,
+    'activityType' | 'quizLiveTotal' | 'quizLiveOptions' | 'quizLiveCorrectIndex'
+  >
+): boolean {
+  return (
+    act.activityType === 'quiz_running' &&
+    act.quizLiveTotal > 0 &&
+    Array.isArray(act.quizLiveOptions) &&
+    act.quizLiveOptions.length === 4 &&
+    act.quizLiveCorrectIndex >= 0 &&
+    act.quizLiveCorrectIndex <= 3
+  );
+}
+
+export function computeLiveQuizWrongCount(
+  current: number,
+  correct: number,
+  chosenIndex: number
+): number {
+  const hasAnsweredCurrent = chosenIndex >= 0 && chosenIndex <= 3;
+  const answeredCount = hasAnsweredCurrent ? Math.max(0, current) : Math.max(0, current - 1);
+  return Math.max(0, answeredCount - Math.max(0, correct));
+}
+
+export interface LiveOptionVisualState {
+  tone: 'neutral' | 'correct' | 'wrong';
+  badge: '' | 'Kunci' | 'Dipilih · Benar' | 'Dipilih · Salah';
+  isChosen: boolean;
+  isKeyVisible: boolean;
+}
+
+export function getLiveOptionVisualState(
+  optionIndex: number,
+  correctIndex: number,
+  chosenIndex: number,
+  showCorrectAnswer: boolean
+): LiveOptionVisualState {
+  const hasAnswered = chosenIndex >= 0 && chosenIndex <= 3;
+  const isCorrect = optionIndex === correctIndex;
+  const isChosen = hasAnswered && optionIndex === chosenIndex;
+
+  if (!hasAnswered) {
+    if (showCorrectAnswer && isCorrect) {
+      return {
+        tone: 'correct',
+        badge: 'Kunci',
+        isChosen: false,
+        isKeyVisible: true,
+      };
+    }
+    return {
+      tone: 'neutral',
+      badge: '',
+      isChosen: false,
+      isKeyVisible: false,
+    };
+  }
+
+  if (isChosen && isCorrect) {
+    return {
+      tone: 'correct',
+      badge: 'Dipilih · Benar',
+      isChosen: true,
+      isKeyVisible: showCorrectAnswer,
+    };
+  }
+
+  if (isChosen && !isCorrect) {
+    return {
+      tone: 'wrong',
+      badge: 'Dipilih · Salah',
+      isChosen: true,
+      isKeyVisible: false,
+    };
+  }
+
+  if (isCorrect && showCorrectAnswer) {
+    return {
+      tone: 'correct',
+      badge: 'Kunci',
+      isChosen: false,
+      isKeyVisible: true,
+    };
+  }
+
+  return {
+    tone: 'neutral',
+    badge: '',
+    isChosen: false,
+    isKeyVisible: false,
+  };
 }
 
 export interface UserDetailSummaryStats {

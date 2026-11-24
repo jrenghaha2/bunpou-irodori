@@ -167,6 +167,39 @@ export function useLiveActivityTracker({
       activitySummary = `Memantau aktivitas pengguna di Panel Pantau`;
     }
 
+    let quizLiveType: UpsertLiveActivityInput['quizLiveType'] = '';
+    let quizLiveChapter = 0;
+    let quizLivePatternTitle = '';
+    let quizLivePrompt = '';
+    let quizLiveJapanese = '';
+    let quizLiveOptions: string[] = [];
+    let quizLiveCorrectIndex = -1;
+    let quizLiveChosenIndex = -1;
+
+    if (
+      activityType === 'quiz_running' &&
+      liveQuiz &&
+      Array.isArray(liveQuiz.options) &&
+      liveQuiz.options.length === 4 &&
+      typeof liveQuiz.correctIndex === 'number' &&
+      liveQuiz.correctIndex >= 0 &&
+      liveQuiz.correctIndex <= 3
+    ) {
+      quizLiveType = liveQuiz.questionType ?? '';
+      quizLiveChapter = liveQuiz.chapterNumber ?? 0;
+      quizLivePatternTitle = truncateText(liveQuiz.patternTitle ?? '', 120);
+      quizLivePrompt = truncateText(liveQuiz.prompt ?? '', 320);
+      quizLiveJapanese = truncateText(liveQuiz.japanesePrompt ?? '', 400);
+      quizLiveOptions = liveQuiz.options.slice(0, 4).map(opt => truncateText(opt, 220));
+      quizLiveCorrectIndex = liveQuiz.correctIndex;
+      quizLiveChosenIndex =
+        typeof liveQuiz.chosenIndex === 'number' &&
+        liveQuiz.chosenIndex >= 0 &&
+        liveQuiz.chosenIndex <= 3
+          ? liveQuiz.chosenIndex
+          : -1;
+    }
+
     return {
       uid: user.uid,
       displayName: displayName || user.displayName || user.email?.split('@')[0] || 'Pembelajar',
@@ -180,6 +213,14 @@ export function useLiveActivityTracker({
       quizLiveCurrent,
       quizLiveTotal,
       quizLiveCorrect,
+      quizLiveType,
+      quizLiveChapter,
+      quizLivePatternTitle,
+      quizLivePrompt,
+      quizLiveJapanese,
+      quizLiveOptions,
+      quizLiveCorrectIndex,
+      quizLiveChosenIndex,
       masteredTotal,
       hardTotal,
       introMastered,

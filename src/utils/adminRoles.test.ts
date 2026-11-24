@@ -6,12 +6,15 @@ import {
   canChangeTargetRole,
   canManageUserRoles,
   classifyPresenceStatus,
+  computeLiveQuizWrongCount,
   computeMonitoringKpis,
   computeUserDetailStats,
   filterActivities,
   filterAdminUsers,
   formatRelativeTimeId,
+  getLiveOptionVisualState,
   getQuizQuestionTypeLabelId,
+  hasLiveQuizQuestion,
   resolveEffectiveRole,
   resolveUserMetrics,
   truncateText,
@@ -193,6 +196,14 @@ test('sorting by time, alphabet, mastered count, and quiz count works accurately
       quizLiveCurrent: 0,
       quizLiveTotal: 0,
       quizLiveCorrect: 0,
+      quizLiveType: '',
+      quizLiveChapter: 0,
+      quizLivePatternTitle: '',
+      quizLivePrompt: '',
+      quizLiveJapanese: '',
+      quizLiveOptions: [],
+      quizLiveCorrectIndex: -1,
+      quizLiveChosenIndex: -1,
       masteredTotal: 10,
       hardTotal: 1,
       introMastered: 10,
@@ -216,6 +227,14 @@ test('sorting by time, alphabet, mastered count, and quiz count works accurately
       quizLiveCurrent: 3,
       quizLiveTotal: 10,
       quizLiveCorrect: 2,
+      quizLiveType: 'cloze',
+      quizLiveChapter: 5,
+      quizLivePatternTitle: 'N を V',
+      quizLivePrompt: 'Pilih isian yang tepat',
+      quizLiveJapanese: 'パン（　　）食べます。',
+      quizLiveOptions: ['を', 'に', 'で', 'へ'],
+      quizLiveCorrectIndex: 0,
+      quizLiveChosenIndex: -1,
       masteredTotal: 35,
       hardTotal: 4,
       introMastered: 35,
@@ -317,6 +336,14 @@ test('computeUserDetailStats and real-time authoritative resolveUserMetrics work
       quizLiveCurrent: 0,
       quizLiveTotal: 0,
       quizLiveCorrect: 0,
+      quizLiveType: '',
+      quizLiveChapter: 0,
+      quizLivePatternTitle: '',
+      quizLivePrompt: '',
+      quizLiveJapanese: '',
+      quizLiveOptions: [],
+      quizLiveCorrectIndex: -1,
+      quizLiveChosenIndex: -1,
       masteredTotal: 10,
       hardTotal: 2,
       introMastered: 10,
@@ -342,4 +369,104 @@ test('computeUserDetailStats and real-time authoritative resolveUserMetrics work
   assert.equal(resolved.masteredTotal, 9);
   assert.equal(resolved.quizSessionCount, 2);
   assert.equal(resolved.latestQuizScore, 100);
+});
+
+test('hasLiveQuizQuestion and getLiveOptionVisualState handle show/hide correct answer toggle accurately', () => {
+  assert.equal(
+    hasLiveQuizQuestion({
+      activityType: 'quiz_running',
+      quizLiveTotal: 10,
+      quizLiveOptions: ['A', 'B', 'C', 'D'],
+      quizLiveCorrectIndex: 1,
+    }),
+    true
+  );
+  assert.equal(
+    hasLiveQuizQuestion({
+      activityType: 'browsing',
+      quizLiveTotal: 10,
+      quizLiveOptions: ['A', 'B', 'C', 'D'],
+      quizLiveCorrectIndex: 1,
+    }),
+    false
+  );
+  assert.equal(
+    hasLiveQuizQuestion({
+      activityType: 'quiz_running',
+      quizLiveTotal: 10,
+      quizLiveOptions: [],
+      quizLiveCorrectIndex: -1,
+    }),
+    false
+  );
+
+  // Waiting for learner answer with showCorrectAnswer = ON -> highlights key as "Kunci"
+  assert.deepEqual(getLiveOptionVisualState(1, 1, -1, true), {
+    tone: 'correct',
+    badge: 'Kunci',
+    isChosen: false,
+    isKeyVisible: true,
+  });
+  assert.deepEqual(getLiveOptionVisualState(0, 1, -1, true), {
+    tone: 'neutral',
+    badge: '',
+    isChosen: false,
+    isKeyVisible: false,
+  });
+
+  // Waiting for learner answer with showCorrectAnswer = OFF -> hides key completely
+  assert.deepEqual(getLiveOptionVisualState(1, 1, -1, false), {
+    tone: 'neutral',
+    badge: '',
+    isChosen: false,
+    isKeyVisible: false,
+  });
+
+  // Learner chose WRONG (index 2, correct is 1):
+  // - showCorrectAnswer = ON -> index 2 is wrong ("Dipilih · Salah"), index 1 is correct ("Kunci")
+  assert.deepEqual(getLiveOptionVisualState(2, 1, 2, true), {
+    tone: 'wrong',
+    badge: 'Dipilih · Salah',
+    isChosen: true,
+    isKeyVisible: false,
+  });
+  assert.deepEqual(getLiveOptionVisualState(1, 1, 2, true), {
+    tone: 'correct',
+    badge: 'Kunci',
+    isChosen: false,
+    isKeyVisible: true,
+  });
+  // - showCorrectAnswer = OFF -> index 2 is wrong ("Dipilih · Salah"), index 1 stays neutral (no spoiler!)
+  assert.deepEqual(getLiveOptionVisualState(2, 1, 2, false), {
+    tone: 'wrong',
+    badge: 'Dipilih · Salah',
+    isChosen: true,
+    isKeyVisible: false,
+  });
+  assert.deepEqual(getLiveOptionVisualState(1, 1, 2, false), {
+    tone: 'neutral',
+    badge: '',
+    isChosen: false,
+    isKeyVisible: false,
+  });
+
+  // Learner chose RIGHT (index 1, correct is 1) -> shows "Dipilih · Benar" regardless of toggle
+  assert.deepEqual(getLiveOptionVisualState(1, 1, 1, true), {
+    tone: 'correct',
+    badge: 'Dipilih · Benar',
+    isChosen: true,
+    isKeyVisible: true,
+  });
+  assert.deepEqual(getLiveOptionVisualState(1, 1, 1, false), {
+    tone: 'correct',
+    badge: 'Dipilih · Benar',
+    isChosen: true,
+    isKeyVisible: false,
+  });
+
+  // Live wrong count calculation (waiting vs answered right/wrong)
+  assert.equal(computeLiveQuizWrongCount(9, 7, -1), 1); // 8 answered before #9, 7 correct -> 1 wrong
+  assert.equal(computeLiveQuizWrongCount(9, 7, 2), 2); // answered #9 wrong -> 2 wrong
+  assert.equal(computeLiveQuizWrongCount(9, 8, 1), 1); // answered #9 right -> 1 wrong
+  assert.equal(computeLiveQuizWrongCount(1, 0, -1), 0); // waiting on #1 -> 0 wrong
 });

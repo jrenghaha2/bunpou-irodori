@@ -11,6 +11,7 @@ import {
   Flame,
   GraduationCap,
   Loader2,
+  Radio,
   Search,
   X,
   XCircle,
@@ -32,6 +33,7 @@ import {
 import { isLegacyPlaceholderChoiceLabel } from '../../utils/quizStats';
 import { JapaneseText } from '../JapaneseText';
 import { Modal } from '../Modal';
+import { LiveQuizQuestionCard } from './LiveQuizQuestionCard';
 
 interface UserDetailMonitorModalProps {
   open: boolean;
@@ -41,6 +43,8 @@ interface UserDetailMonitorModalProps {
   loading: boolean;
   detail: UserDetailedMonitoring | null;
   nowMs: number;
+  showLiveCorrectAnswer?: boolean;
+  onToggleShowLiveCorrectAnswer?: () => void;
   onClose: () => void;
 }
 
@@ -82,6 +86,8 @@ export function UserDetailMonitorModal({
   loading,
   detail,
   nowMs,
+  showLiveCorrectAnswer: controlledShowLiveCorrect,
+  onToggleShowLiveCorrectAnswer,
   onClose,
 }: UserDetailMonitorModalProps) {
   const [expandedSessionKey, setExpandedSessionKey] = useState<string | null>(null);
@@ -91,6 +97,12 @@ export function UserDetailMonitorModal({
   const [bookChapterFilter, setBookChapterFilter] = useState<'all' | ChapterNumber>('all');
   const [bookSearch, setBookSearch] = useState('');
   const [showFurigana, setShowFurigana] = useState(true);
+  const [showLiveQuestionPanel, setShowLiveQuestionPanel] = useState(true);
+  const [localShowLiveCorrect, setLocalShowLiveCorrect] = useState(false);
+
+  const showLiveCorrect = controlledShowLiveCorrect ?? localShowLiveCorrect;
+  const handleToggleLiveCorrect =
+    onToggleShowLiveCorrectAnswer ?? (() => setLocalShowLiveCorrect(prev => !prev));
 
   const targetUid = user?.uid ?? liveActivity?.uid ?? null;
 
@@ -101,6 +113,7 @@ export function UserDetailMonitorModal({
     setBookStatusFilter('mastered');
     setBookChapterFilter('all');
     setBookSearch('');
+    setShowLiveQuestionPanel(true);
   }, [targetUid, open]);
 
   const stats = useMemo(() => {
@@ -308,15 +321,37 @@ export function UserDetailMonitorModal({
         <>
           {/* Live in-progress quiz banner if user is currently taking a quiz */}
           {isLiveQuiz && liveActivity ? (
-            <div className="rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50/70 dark:bg-amber-950/30 p-3.5 space-y-2">
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-700/80 bg-amber-50/70 dark:bg-amber-950/30 p-3.5 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-bold text-amber-900 dark:text-amber-200">
-                  Sedang Mengerjakan Kuis Live: {liveActivity.activitySummary}
-                </span>
-                <span className="font-mono-num font-bold text-amber-800 dark:text-amber-300">
-                  Soal {liveActivity.quizLiveCurrent}/{liveActivity.quizLiveTotal} · Benar{' '}
-                  {liveActivity.quizLiveCorrect}
-                </span>
+                <div className="min-w-0">
+                  <span className="font-bold text-amber-900 dark:text-amber-200">
+                    Sedang Mengerjakan Kuis Live: {liveActivity.activitySummary}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-mono-num font-bold text-amber-800 dark:text-amber-300">
+                    Soal {liveActivity.quizLiveCurrent}/{liveActivity.quizLiveTotal} · Benar{' '}
+                    {liveActivity.quizLiveCorrect}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowLiveQuestionPanel(prev => !prev)}
+                    aria-expanded={showLiveQuestionPanel}
+                    className={`min-h-[32px] px-2.5 py-1 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      showLiveQuestionPanel
+                        ? 'border-amber-400 dark:border-amber-600 bg-amber-100 dark:bg-amber-900/60 text-amber-950 dark:text-amber-100'
+                        : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50'
+                    }`}
+                  >
+                    <Radio className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>{showLiveQuestionPanel ? 'Tutup Soal' : 'Pantau Soal'}</span>
+                    {showLiveQuestionPanel ? (
+                      <ChevronUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="h-1.5 rounded-full bg-amber-200/80 dark:bg-amber-900/60 overflow-hidden">
                 <div
@@ -324,6 +359,15 @@ export function UserDetailMonitorModal({
                   style={{ width: `${liveQuizPct}%` }}
                 />
               </div>
+              {showLiveQuestionPanel ? (
+                <LiveQuizQuestionCard
+                  activity={liveActivity}
+                  showCorrectAnswer={showLiveCorrect}
+                  onToggleShowCorrectAnswer={handleToggleLiveCorrect}
+                  showFurigana={showFurigana}
+                  compact
+                />
+              ) : null}
             </div>
           ) : null}
 

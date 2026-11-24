@@ -3,8 +3,11 @@ import {
   Activity,
   ArrowUpDown,
   Award,
+  ChevronDown,
+  ChevronUp,
   ClipboardCheck,
   Eye,
+  EyeOff,
   Loader2,
   Radio,
   Search,
@@ -44,6 +47,7 @@ import {
   type UserMonitorMetrics,
 } from '../utils/adminRoles';
 import type { ShowToastFn } from '../hooks/useToast';
+import { LiveQuizQuestionCard } from './admin/LiveQuizQuestionCard';
 import { UserDetailMonitorModal } from './admin/UserDetailMonitorModal';
 
 type AdminSubTab = 'live' | 'events' | 'users';
@@ -107,6 +111,17 @@ export function AdminMonitorPanel({
   const [inspectedUid, setInspectedUid] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailData, setDetailData] = useState<UserDetailedMonitoring | null>(null);
+
+  // Live quiz question monitor state (per-user Pantau Soal / Tutup Soal + answer key hidden by default)
+  const [expandedLiveQuizUids, setExpandedLiveQuizUids] = useState<string[]>([]);
+  const [showLiveCorrectAnswer, setShowLiveCorrectAnswer] = useState(false);
+  const [showLiveFurigana, setShowLiveFurigana] = useState(true);
+
+  const toggleLiveQuizMonitor = (uid: string) => {
+    setExpandedLiveQuizUids(prev =>
+      prev.includes(uid) ? prev.filter(item => item !== uid) : [...prev, uid]
+    );
+  };
 
   const isSuperAdmin = canManageUserRoles(currentRole);
 
@@ -600,27 +615,62 @@ export function AdminMonitorPanel({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {(
-                [
-                  { id: 'all', label: 'Semua' },
-                  { id: 'online', label: 'Aktif Sekarang' },
-                  { id: 'quiz', label: 'Aktivitas Kuis' },
-                ] as const
-              ).map(f => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setActivityFilter(f.id)}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-                    activityFilter === f.id
-                      ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-200'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(
+                  [
+                    { id: 'all', label: 'Semua' },
+                    { id: 'online', label: 'Aktif Sekarang' },
+                    { id: 'quiz', label: 'Aktivitas Kuis' },
+                  ] as const
+                ).map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setActivityFilter(f.id)}
+                    className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                      activityFilter === f.id
+                        ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-200'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showLiveCorrectAnswer}
+                onClick={() => setShowLiveCorrectAnswer(prev => !prev)}
+                className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold border inline-flex items-center gap-2 transition-colors cursor-pointer ${
+                  showLiveCorrectAnswer
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400/80 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/50'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                {showLiveCorrectAnswer ? (
+                  <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                ) : (
+                  <EyeOff className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                )}
+                <span>Kunci Jawaban</span>
+                <span
+                  aria-hidden="true"
+                  className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                    showLiveCorrectAnswer
+                      ? 'bg-emerald-500'
+                      : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
-                  {f.label}
-                </button>
-              ))}
+                  <span
+                    className={`inline-block h-3 w-3 rounded-full bg-white shadow-xs transform transition-transform ${
+                      showLiveCorrectAnswer ? 'translate-x-3.5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </span>
+              </button>
             </div>
           </div>
 
@@ -792,15 +842,59 @@ export function AdminMonitorPanel({
                           </span>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => void handleInspectUser(act.uid)}
-                          className="min-h-[34px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 dark:hover:border-indigo-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer"
-                        >
-                          Lihat Detail
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          {isLiveQuiz && act.quizLiveTotal > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleLiveQuizMonitor(act.uid)}
+                              aria-expanded={expandedLiveQuizUids.includes(act.uid)}
+                              className={`min-h-[34px] px-3 py-1.5 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                expandedLiveQuizUids.includes(act.uid)
+                                  ? 'border-amber-400 dark:border-amber-600 bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100'
+                                  : 'border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200'
+                              }`}
+                            >
+                              <Radio className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              <span>
+                                {expandedLiveQuizUids.includes(act.uid)
+                                  ? 'Tutup Soal'
+                                  : 'Pantau Soal'}
+                              </span>
+                              {expandedLiveQuizUids.includes(act.uid) ? (
+                                <ChevronUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              )}
+                            </button>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => void handleInspectUser(act.uid)}
+                            className="min-h-[34px] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 dark:hover:border-indigo-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                            <span>Detail</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
+
+                    {isLiveQuiz &&
+                    act.quizLiveTotal > 0 &&
+                    expandedLiveQuizUids.includes(act.uid) ? (
+                      <div className="mt-3.5 pt-3.5 border-t border-amber-200/80 dark:border-amber-800/60">
+                        <LiveQuizQuestionCard
+                          activity={act}
+                          showCorrectAnswer={showLiveCorrectAnswer}
+                          onToggleShowCorrectAnswer={() =>
+                            setShowLiveCorrectAnswer(prev => !prev)
+                          }
+                          showFurigana={showLiveFurigana}
+                          onToggleFurigana={() => setShowLiveFurigana(prev => !prev)}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
@@ -1160,6 +1254,8 @@ export function AdminMonitorPanel({
         loading={detailLoading}
         detail={detailData}
         nowMs={nowMs}
+        showLiveCorrectAnswer={showLiveCorrectAnswer}
+        onToggleShowLiveCorrectAnswer={() => setShowLiveCorrectAnswer(prev => !prev)}
         onClose={() => {
           setInspectedUid(null);
           setDetailData(null);

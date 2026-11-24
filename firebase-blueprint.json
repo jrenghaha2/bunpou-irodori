@@ -183,6 +183,42 @@
           "type": "integer",
           "description": "Correct answers count so far during an active quiz session (0 if idle)."
         },
+        "quizLiveType": {
+          "type": "string",
+          "enum": ["", "cloze", "formula", "function"],
+          "description": "Optional active live quiz question type (empty string when idle)."
+        },
+        "quizLiveChapter": {
+          "type": "integer",
+          "description": "Optional chapter number (0-18) of the active live quiz question."
+        },
+        "quizLivePatternTitle": {
+          "type": "string",
+          "description": "Optional Bunpou pattern title of the active live quiz question.",
+          "maxLength": 120
+        },
+        "quizLivePrompt": {
+          "type": "string",
+          "description": "Optional prompt text of the active live quiz question.",
+          "maxLength": 320
+        },
+        "quizLiveJapanese": {
+          "type": "string",
+          "description": "Optional Japanese sentence (with ruby markup) of the active live quiz question.",
+          "maxLength": 400
+        },
+        "quizLiveOptions": {
+          "type": "array",
+          "description": "Optional 4 multiple-choice options (or empty array when idle), each <= 220 characters."
+        },
+        "quizLiveCorrectIndex": {
+          "type": "integer",
+          "description": "Optional 0-based index (0-3) of the correct option during a live quiz, or -1 when idle."
+        },
+        "quizLiveChosenIndex": {
+          "type": "integer",
+          "description": "Optional 0-based index (0-3) clicked by the learner in real time, or -1 while waiting/idle."
+        },
         "masteredTotal": {
           "type": "integer",
           "description": "Total mastered patterns across all 3 Irodori books."

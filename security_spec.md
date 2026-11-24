@@ -36,7 +36,7 @@
 ### C. `/liveActivity/{userId}` (`LiveActivity`)
 1. **Master Gate**: Create and update require `/users/{userId}` to exist.
 2. **Read Access**: `get` limited to `isOwner(userId) || isAdminOrSuperAdmin()`; `list` strictly limited to `isAdminOrSuperAdmin() && request.query.limit <= 100`.
-3. **Write Access**: Strictly `isVerifiedUser() && isOwner(userId)` with full schema/type/range/enum validation, `email` token binding, and server timestamps (`request.time`).
+3. **Write Access**: Strictly `isVerifiedUser() && isOwner(userId)` with full schema/type/range/enum validation, `email` token binding, and server timestamps (`request.time`). Optional live quiz inspection fields (`quizLiveType`, `quizLiveChapter` 0–18, `quizLivePatternTitle` <= 120, `quizLivePrompt` <= 320, `quizLiveJapanese` <= 400, `quizLiveOptions` strictly 0 or 4 strings each <= 220 via element-wise checks, `quizLiveCorrectIndex` -1..3, `quizLiveChosenIndex` -1..3 with cross-field consistency) are strictly validated on create and update.
 4. **No Client Delete**: `allow delete: if false;`.
 
 ### D. `/activityEvents/{eventId}` (`ActivityEvent`)

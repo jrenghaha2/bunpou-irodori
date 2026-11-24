@@ -191,6 +191,8 @@ test('firestore.rules structural security invariants (Eight Pillars + 3-Tier RBA
   assert.match(rulesText, /match \/activityEvents\/\{eventId\}/);
   assert.match(rulesText, /val\.size\(\) <= 16000/);
   assert.match(rulesText, /\(:?\[A-Za-z0-9_\\\\-\]\{1,260\}\)\?/);
+  assert.match(rulesText, /function isValidLiveQuizOptions\(arr\)/);
+  assert.match(rulesText, /function isValidOptionalLiveQuizFields\(data\)/);
 });
 
 test('3-Tier RBAC adversarial tests: Superadmin vs Admin vs User & Email Spoofing', () => {
@@ -495,6 +497,206 @@ test('Dirty Dozen adversarial payloads on progress & quizHistory return PERMISSI
       Array.from({ length: 16 }, (_, i) => `q${i}|2026-11-19T04:00:00.000Z|mixed|1|1|100|all|`),
       'introductory'
     ),
+    false
+  );
+});
+
+function validateOptionalLiveQuizFields(data: Record<string, unknown>): boolean {
+  const allowedKeys = new Set([
+    'uid',
+    'displayName',
+    'email',
+    'avatarUrl',
+    'activeBookId',
+    'activeTab',
+    'activeChapterLabel',
+    'activityType',
+    'activitySummary',
+    'quizLiveCurrent',
+    'quizLiveTotal',
+    'quizLiveCorrect',
+    'quizLiveType',
+    'quizLiveChapter',
+    'quizLivePatternTitle',
+    'quizLivePrompt',
+    'quizLiveJapanese',
+    'quizLiveOptions',
+    'quizLiveCorrectIndex',
+    'quizLiveChosenIndex',
+    'masteredTotal',
+    'hardTotal',
+    'introMastered',
+    'elem1Mastered',
+    'elem2Mastered',
+    'latestQuizScore',
+    'latestQuizSummary',
+    'quizSessionCount',
+    'createdAt',
+    'updatedAt',
+  ]);
+  if (!Object.keys(data).every(k => allowedKeys.has(k))) return false;
+
+  if (
+    'quizLiveType' in data &&
+    (typeof data.quizLiveType !== 'string' ||
+      !['', 'cloze', 'formula', 'function'].includes(data.quizLiveType))
+  ) {
+    return false;
+  }
+  if (
+    'quizLiveChapter' in data &&
+    (!Number.isInteger(data.quizLiveChapter) ||
+      (data.quizLiveChapter as number) < 0 ||
+      (data.quizLiveChapter as number) > 18)
+  ) {
+    return false;
+  }
+  if (
+    'quizLivePatternTitle' in data &&
+    (typeof data.quizLivePatternTitle !== 'string' || data.quizLivePatternTitle.length > 120)
+  ) {
+    return false;
+  }
+  if (
+    'quizLivePrompt' in data &&
+    (typeof data.quizLivePrompt !== 'string' || data.quizLivePrompt.length > 320)
+  ) {
+    return false;
+  }
+  if (
+    'quizLiveJapanese' in data &&
+    (typeof data.quizLiveJapanese !== 'string' || data.quizLiveJapanese.length > 400)
+  ) {
+    return false;
+  }
+  if ('quizLiveOptions' in data) {
+    const arr = data.quizLiveOptions;
+    if (!Array.isArray(arr)) return false;
+    if (
+      arr.length !== 0 &&
+      !(
+        arr.length === 4 &&
+        typeof arr[0] === 'string' &&
+        arr[0].length <= 220 &&
+        typeof arr[1] === 'string' &&
+        arr[1].length <= 220 &&
+        typeof arr[2] === 'string' &&
+        arr[2].length <= 220 &&
+        typeof arr[3] === 'string' &&
+        arr[3].length <= 220
+      )
+    ) {
+      return false;
+    }
+  }
+  if (
+    'quizLiveCorrectIndex' in data &&
+    (!Number.isInteger(data.quizLiveCorrectIndex) ||
+      (data.quizLiveCorrectIndex as number) < -1 ||
+      (data.quizLiveCorrectIndex as number) > 3)
+  ) {
+    return false;
+  }
+  if (
+    'quizLiveChosenIndex' in data &&
+    (!Number.isInteger(data.quizLiveChosenIndex) ||
+      (data.quizLiveChosenIndex as number) < -1 ||
+      (data.quizLiveChosenIndex as number) > 3)
+  ) {
+    return false;
+  }
+
+  if ('quizLiveOptions' in data) {
+    const opts = data.quizLiveOptions as unknown[];
+    if (opts.length === 0) {
+      if ('quizLiveCorrectIndex' in data && data.quizLiveCorrectIndex !== -1) return false;
+      if ('quizLiveChosenIndex' in data && data.quizLiveChosenIndex !== -1) return false;
+    } else if (opts.length === 4) {
+      if (
+        !('quizLiveCorrectIndex' in data) ||
+        (data.quizLiveCorrectIndex as number) < 0 ||
+        (data.quizLiveCorrectIndex as number) > 3
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+test('LiveActivity live quiz question & answer fields enforce strict bounds and consistency', () => {
+  const validWaiting = {
+    quizLiveType: 'cloze',
+    quizLiveChapter: 4,
+    quizLivePatternTitle: 'N は N です',
+    quizLivePrompt: 'Lengkapi bagian kosong pada kalimat berikut.',
+    quizLiveJapanese: 'これは{私|わたし}の（　　）です。',
+    quizLiveOptions: ['{本|ほん}', '{財布|さいふ}', '{傘|かさ}', '{鍵|かぎ}'],
+    quizLiveCorrectIndex: 1,
+    quizLiveChosenIndex: -1,
+  };
+  const validAnswered = { ...validWaiting, quizLiveChosenIndex: 1 };
+  const validIdle = {
+    quizLiveType: '',
+    quizLiveChapter: 0,
+    quizLivePatternTitle: '',
+    quizLivePrompt: '',
+    quizLiveJapanese: '',
+    quizLiveOptions: [],
+    quizLiveCorrectIndex: -1,
+    quizLiveChosenIndex: -1,
+  };
+
+  assert.equal(validateOptionalLiveQuizFields(validWaiting), true);
+  assert.equal(validateOptionalLiveQuizFields(validAnswered), true);
+  assert.equal(validateOptionalLiveQuizFields(validIdle), true);
+  // Legacy docs without the optional fields remain valid
+  assert.equal(validateOptionalLiveQuizFields({ uid: 'u1' }), true);
+
+  // Adversarial rejections
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, quizLiveOptions: ['a', 'b', 'c', 'd', 'e'] }),
+    false
+  );
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, quizLiveOptions: ['a', 'b', 'c'] }),
+    false
+  );
+  assert.equal(
+    validateOptionalLiveQuizFields({
+      ...validWaiting,
+      quizLiveOptions: ['a', 'b', 'c', 'x'.repeat(221)],
+    }),
+    false
+  );
+  assert.equal(
+    validateOptionalLiveQuizFields({
+      ...validWaiting,
+      quizLiveOptions: ['a', 'b', 'c', 123 as unknown as string],
+    }),
+    false
+  );
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, quizLiveType: 'hacked' }),
+    false
+  );
+  assert.equal(validateOptionalLiveQuizFields({ ...validWaiting, quizLiveChapter: 19 }), false);
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, quizLiveCorrectIndex: 4 }),
+    false
+  );
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, quizLiveChosenIndex: 9 }),
+    false
+  );
+  // Mismatched idle options with active chosenIndex
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validIdle, quizLiveChosenIndex: 2 }),
+    false
+  );
+  // Ghost field injection
+  assert.equal(
+    validateOptionalLiveQuizFields({ ...validWaiting, showAnswerToLearner: true }),
     false
   );
 });

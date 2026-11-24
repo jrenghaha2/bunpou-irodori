@@ -18,6 +18,7 @@ import type {
   BookId,
   BunpouPattern,
   QuizFocus,
+  QuizQuestionType,
   QuizSessionHistoryEntry,
   UserRole,
 } from '../types/bunpou';
@@ -93,6 +94,17 @@ function clampInt(val: unknown, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
+function normalizeQuizLiveType(raw: unknown): QuizQuestionType | '' {
+  if (raw === 'cloze' || raw === 'formula' || raw === 'function') return raw;
+  return '';
+}
+
+function normalizeQuizLiveOptions(raw: unknown): string[] {
+  if (!Array.isArray(raw) || raw.length !== 4) return [];
+  const cleaned = raw.map(item => (typeof item === 'string' ? truncateText(item, 220) : ''));
+  return cleaned.length === 4 ? cleaned : [];
+}
+
 export interface UpsertLiveActivityInput {
   uid: string;
   displayName: string;
@@ -106,6 +118,14 @@ export interface UpsertLiveActivityInput {
   quizLiveCurrent: number;
   quizLiveTotal: number;
   quizLiveCorrect: number;
+  quizLiveType: QuizQuestionType | '';
+  quizLiveChapter: number;
+  quizLivePatternTitle: string;
+  quizLivePrompt: string;
+  quizLiveJapanese: string;
+  quizLiveOptions: string[];
+  quizLiveCorrectIndex: number;
+  quizLiveChosenIndex: number;
   masteredTotal: number;
   hardTotal: number;
   introMastered: number;
@@ -137,6 +157,11 @@ export async function upsertLiveActivity(
   const safeTotal = clampInt(input.quizLiveTotal, 0, 300);
   const safeCorrect = clampInt(input.quizLiveCorrect, 0, safeTotal);
   const safeCurrent = clampInt(input.quizLiveCurrent, 0, 300);
+  const normalizedOptions = normalizeQuizLiveOptions(input.quizLiveOptions);
+  const hasFourOptions =
+    normalizedOptions.length === 4 &&
+    input.quizLiveCorrectIndex >= 0 &&
+    input.quizLiveCorrectIndex <= 3;
 
   const baseFields = {
     displayName: sanitizeDisplayName(input.displayName || 'Pembelajar'),
@@ -150,6 +175,14 @@ export async function upsertLiveActivity(
     quizLiveCurrent: safeCurrent,
     quizLiveTotal: safeTotal,
     quizLiveCorrect: safeCorrect,
+    quizLiveType: hasFourOptions ? normalizeQuizLiveType(input.quizLiveType) : '',
+    quizLiveChapter: hasFourOptions ? clampInt(input.quizLiveChapter, 0, 18) : 0,
+    quizLivePatternTitle: hasFourOptions ? truncateText(input.quizLivePatternTitle || '', 120) : '',
+    quizLivePrompt: hasFourOptions ? truncateText(input.quizLivePrompt || '', 320) : '',
+    quizLiveJapanese: hasFourOptions ? truncateText(input.quizLiveJapanese || '', 400) : '',
+    quizLiveOptions: hasFourOptions ? normalizedOptions : [],
+    quizLiveCorrectIndex: hasFourOptions ? clampInt(input.quizLiveCorrectIndex, 0, 3) : -1,
+    quizLiveChosenIndex: hasFourOptions ? clampInt(input.quizLiveChosenIndex, -1, 3) : -1,
     masteredTotal: clampInt(input.masteredTotal, 0, 300),
     hardTotal: clampInt(input.hardTotal, 0, 300),
     introMastered: clampInt(input.introMastered, 0, 150),
@@ -262,6 +295,21 @@ export function subscribeLiveActivities(
           quizLiveCurrent: clampInt(data.quizLiveCurrent, 0, 300),
           quizLiveTotal: clampInt(data.quizLiveTotal, 0, 300),
           quizLiveCorrect: clampInt(data.quizLiveCorrect, 0, 300),
+          quizLiveType: normalizeQuizLiveType(data.quizLiveType),
+          quizLiveChapter: clampInt(data.quizLiveChapter, 0, 18),
+          quizLivePatternTitle:
+            typeof data.quizLivePatternTitle === 'string' ? data.quizLivePatternTitle : '',
+          quizLivePrompt: typeof data.quizLivePrompt === 'string' ? data.quizLivePrompt : '',
+          quizLiveJapanese: typeof data.quizLiveJapanese === 'string' ? data.quizLiveJapanese : '',
+          quizLiveOptions: normalizeQuizLiveOptions(data.quizLiveOptions),
+          quizLiveCorrectIndex:
+            typeof data.quizLiveCorrectIndex === 'number'
+              ? clampInt(data.quizLiveCorrectIndex, -1, 3)
+              : -1,
+          quizLiveChosenIndex:
+            typeof data.quizLiveChosenIndex === 'number'
+              ? clampInt(data.quizLiveChosenIndex, -1, 3)
+              : -1,
           masteredTotal: clampInt(data.masteredTotal, 0, 300),
           hardTotal: clampInt(data.hardTotal, 0, 300),
           introMastered: clampInt(data.introMastered, 0, 150),
