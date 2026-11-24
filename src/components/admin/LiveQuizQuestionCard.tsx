@@ -186,7 +186,7 @@ export function LiveQuizQuestionCard({
           {/* Prompt & Japanese sentence box */}
           <div className="rounded-xl bg-slate-50 dark:bg-slate-800/55 border border-slate-200/80 dark:border-slate-700/70 p-3.5 space-y-1.5">
             {activity.quizLivePrompt ? (
-              <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
                 {activity.quizLivePrompt}
               </p>
             ) : null}
@@ -195,12 +195,6 @@ export function LiveQuizQuestionCard({
               <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 leading-relaxed pt-0.5">
                 <JapaneseText text={activity.quizLiveJapanese} showFurigana={showFurigana} />
               </div>
-            ) : null}
-
-            {activity.quizLivePatternTitle && activity.quizLiveType !== 'cloze' ? (
-              <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 pt-0.5">
-                {activity.quizLivePatternTitle}
-              </p>
             ) : null}
           </div>
 

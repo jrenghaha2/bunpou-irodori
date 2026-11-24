@@ -14,6 +14,8 @@ import {
   calculateQuizScore,
   findClozeTarget,
   formatChapterSelectionLabel,
+  formatCleanFormula,
+  sanitizeIndonesianClue,
 } from './quizGenerator';
 import { getDefaultStorage, type StorageLike } from './storage';
 
@@ -400,11 +402,12 @@ function reconstructQuestionDetails(
   }
 
   if (qType === 'formula') {
+    const clue = sanitizeIndonesianClue(pat.functionText);
     return {
-      promptText: `Manakah rumus penyambungan yang tepat untuk pola "${pat.title}" (${pat.functionText})?`,
+      promptText: `Manakah rumus penyambungan bunpou yang tepat untuk fungsi berikut? "${clue}"`,
       exampleJp: pat.examples[0]?.japanese,
       translationId: pat.examples[0]?.translation,
-      expectedLabel: pat.formulas[0] ?? pat.title,
+      expectedLabel: formatCleanFormula(pat.formulas[0] ?? pat.title) || pat.title,
     };
   }
 
@@ -412,7 +415,7 @@ function reconstructQuestionDetails(
     promptText: `Apa fungsi utama dari pola bunpou "${pat.shortPattern}" berikut ini?`,
     exampleJp: pat.examples[0]?.japanese,
     translationId: pat.examples[0]?.translation,
-    expectedLabel: pat.functionText,
+    expectedLabel: sanitizeIndonesianClue(pat.functionText) || pat.functionText,
   };
 }
 

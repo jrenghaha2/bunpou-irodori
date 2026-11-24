@@ -261,6 +261,73 @@ test('quiz generator builds 10 valid questions across all 3 books including Pemu
   );
 });
 
+test('all 769 generated quiz questions (formula, function, cloze) across all 3 books have zero answer spoilers', () => {
+  const jpCharRe = /[ぁ-んァ-ヶ一-龠]/;
+
+  const formulaQs = generateQuizQuestions(DATASET.allPatterns, {
+    bookId: 'all',
+    focus: 'formula',
+    count: 'all',
+    seed: 2026,
+  });
+  assert.equal(formulaQs.length, 264);
+  for (const q of formulaQs) {
+    assert.equal(q.options.length, 4);
+    assert.equal(new Set(q.options).size, 4, `Duplicate formula options on ${q.id}`);
+    assert.equal(
+      q.japanesePrompt,
+      undefined,
+      `Formula question must not show unblanked Japanese sentence before answering: ${q.id}`
+    );
+    assert.ok(
+      !jpCharRe.test(q.prompt),
+      `Formula prompt leaked Japanese characters on ${q.id}: ${q.prompt}`
+    );
+    for (const opt of q.options) {
+      assert.ok(
+        !/\([^)]*[a-z]{3,}[^)]*\)/.test(opt),
+        `Formula option leaked Indonesian parenthetical explanation on ${q.id}: ${opt}`
+      );
+    }
+  }
+
+  const funcQs = generateQuizQuestions(DATASET.allPatterns, {
+    bookId: 'all',
+    focus: 'function',
+    count: 'all',
+    seed: 2026,
+  });
+  assert.equal(funcQs.length, 264);
+  for (const q of funcQs) {
+    assert.equal(q.options.length, 4);
+    assert.equal(new Set(q.options).size, 4, `Duplicate function options on ${q.id}`);
+    for (const opt of q.options) {
+      assert.ok(
+        !jpCharRe.test(opt),
+        `Function option leaked Japanese characters on ${q.id}: ${opt}`
+      );
+    }
+  }
+
+  const clozeQs = generateQuizQuestions(DATASET.allPatterns, {
+    bookId: 'all',
+    focus: 'cloze',
+    count: 'all',
+    seed: 2026,
+  });
+  assert.ok(clozeQs.length >= 240);
+  for (const q of clozeQs) {
+    assert.equal(q.options.length, 4);
+    assert.equal(new Set(q.options).size, 4, `Duplicate cloze options on ${q.id}`);
+    const ans = q.options[q.correctIndex];
+    const plainBlanked = stripFuriganaMarkup(q.japanesePrompt ?? '');
+    assert.ok(
+      !plainBlanked.includes(ans),
+      `Cloze blanked sentence still contained unblanked answer "${ans}" on ${q.id}: ${plainBlanked}`
+    );
+  }
+});
+
 test('Flashcard 3D flip CSS classes match FlashcardPanel and Space key stops propagation', () => {
   const css = fs.readFileSync(path.resolve(process.cwd(), 'src/index.css'), 'utf8');
   const panel = fs.readFileSync(

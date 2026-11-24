@@ -81,15 +81,89 @@ interface RubySpan {
   rawEnd: number;
 }
 
+const JP_CHAR_RE = /[ぁ-んァ-ヶ一-龠]/;
+
 /**
- * Replaces a matched plain-text substring in a sentence containing `{漢字|かな}` ruby markup
- * without stripping ruby markup from the rest of the sentence.
- * Returns null if the match would slice halfway through a single ruby token.
+ * Strips Indonesian parenthetical translations/explanations from a formula so
+ * `Rumus Penyambungan` choices only show the grammar structure without spoiling the meaning.
+ */
+export function formatCleanFormula(raw: string): string {
+  let s = raw.trim();
+  // Remove half-width parenthetical Indonesian explanations/glosses (containing >= 2 lowercase Latin letters)
+  s = s.replace(/\s*\([^)]*[a-z]{2,}[^)]*\)/g, '');
+  // Remove trailing top-level em-dash / en-dash Indonesian descriptions
+  s = s.replace(/\s+[—–]\s+[A-Za-z].*$/, '');
+  return s.replace(/\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
+/**
+ * Produces a natural, spoiler-free Indonesian functional description by removing or replacing
+ * Japanese script tokens that would otherwise leak the exact pattern or particle answer.
+ */
+export function sanitizeIndonesianClue(text: string): string {
+  const sentences = text
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // Prefer sentences that are already pure Indonesian when they give a complete clue (>= 28 chars)
+  const cleanSentences = sentences.filter(s => !JP_CHAR_RE.test(s));
+  let base = cleanSentences.join(' ').trim();
+  if (base.length < 28) {
+    base = text.trim();
+  }
+
+  if (JP_CHAR_RE.test(base)) {
+    base = base
+      // Replace `<JP_TOKEN> (<Indonesian gloss>)` with `"<Indonesian gloss>"` (only if parens have no JP)
+      .replace(
+        /(?:(?:[A-Za-z0-9]+[-・])|(?:[〜～「『【]))*[ぁ-んァ-ヶ一-龠ー]+(?:[A-Za-z0-9ぁ-んァ-ヶ一-龠ー\-・〜～／/→=？！?!」』】])*\s*\(([^()ぁ-んァ-ヶ一-龠]*[a-z]{2,}[^()ぁ-んァ-ヶ一-龠]*)\)/g,
+        '"$1"'
+      )
+      // Remove parenthetical chunks containing Japanese characters (e.g. (です／ます), (辞書形))
+      .replace(/[（(][^()（）]*[ぁ-んァ-ヶ一-龠][^()（）]*[）)]/g, '')
+      // Replace labeled grammar references like 'Partikel は' -> 'Partikel ini'
+      .replace(
+        /\b(Partikel|partikel|Kata kerja|kata kerja|Kata keterangan|kata keterangan|Kata bantu|kata bantu|Kata sifat|kata sifat|Pola|pola|Bentuk|bentuk|Akhiran|akhiran|Ungkapan|ungkapan)\s+[A-Za-z0-9\-・〜～／/]*[ぁ-んァ-ヶ一-龠ー][A-Za-z0-9ぁ-んァ-ヶ一-龠ー\-・〜～／/→=？！?!「」『』【】]*/g,
+        '$1 ini'
+      )
+      // Replace any remaining Japanese token sequences
+      .replace(
+        /(?:(?:[A-Za-z0-9]+[-・])|(?:[〜～「『【]))*[ぁ-んァ-ヶ一-龠ー]+(?:[A-Za-z0-9ぁ-んァ-ヶ一-龠ー\-・〜～／/→=？！?!」』】])*/g,
+        'pola ini'
+      )
+      // Collapse consecutive placeholders and orphaned pronunciation hints
+      .replace(/(?:pola ini\s*(?:\/|／|・|→|,|\s+dan\s+|\s+atau\s+)\s*)+pola ini/g, 'pola ini')
+      .replace(
+        /\b(Partikel|partikel|Kata kerja|kata kerja|Kata keterangan|kata keterangan|Kata bantu|kata bantu|Kata sifat|kata sifat|Pola|pola|Bentuk|bentuk|Akhiran|akhiran|Ungkapan|ungkapan)\s+ini\s*(?:\/|／|→)\s*pola ini/g,
+        '$1 ini'
+      )
+      .replace(/["「]pola ini["」]/g, 'pola ini')
+      .replace(/\s*\(dibaca\s+"[^"]+"\)/gi, '')
+      .replace(/\bdibaca\s+"[^"]+"\s+dan\s+/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/\s+([.,;:!?])/g, '$1')
+      .replace(/\(\s*\)/g, '')
+      .trim();
+  }
+
+  if (base.length > 0) {
+    base = base.charAt(0).toUpperCase() + base.slice(1);
+  }
+  return base;
+}
+
+/**
+ * Finds all non-overlapping occurrences of `target` in a sentence containing `{漢字|かな}` ruby markup
+ * without slicing halfway through a single ruby token, and blanks either the unique match or all
+ * occurrences so the answer never appears unblanked elsewhere in the same prompt.
  */
 function blankSentencePreservingRuby(
   rubySentence: string,
-  target: string
-): { blankedSentence: string } | null {
+  target: string,
+  blankAllOccurrences: boolean
+): { blankedSentence: string; matchCount: number } | null {
   const spans: RubySpan[] = [];
   let plain = '';
   const rubyRegex = /\{([^{}|]+)\|([^{}|]+)\}/g;
@@ -129,27 +203,36 @@ function blankSentencePreservingRuby(
 
   if (plain.length <= target.length + 3) return null;
 
+  const rawRanges: { start: number; end: number }[] = [];
   let searchFrom = 0;
   while (searchFrom <= plain.length - target.length) {
     const idx = plain.indexOf(target, searchFrom);
-    if (idx === -1) return null;
+    if (idx === -1) break;
 
     const matchEnd = idx + target.length;
     const startSpan = spans.find(s => s.plainStart === idx);
     const endSpan = spans.find(s => s.plainEnd === matchEnd);
 
     if (startSpan && endSpan) {
-      const blankedSentence =
-        rubySentence.slice(0, startSpan.rawStart) +
-        '（　　）' +
-        rubySentence.slice(endSpan.rawEnd);
-      return { blankedSentence };
+      rawRanges.push({ start: startSpan.rawStart, end: endSpan.rawEnd });
+      searchFrom = matchEnd;
+    } else {
+      searchFrom = idx + 1;
     }
-
-    searchFrom = idx + 1;
   }
 
-  return null;
+  if (rawRanges.length === 0) return null;
+
+  const rangesToBlank = blankAllOccurrences ? rawRanges : [rawRanges[0]];
+  let blankedSentence = '';
+  let cursor = 0;
+  for (const r of rangesToBlank) {
+    blankedSentence += rubySentence.slice(cursor, r.start) + '（　　）';
+    cursor = r.end;
+  }
+  blankedSentence += rubySentence.slice(cursor);
+
+  return { blankedSentence, matchCount: rawRanges.length };
 }
 
 export function findClozeTarget(pattern: BunpouPattern): {
@@ -197,11 +280,28 @@ export function findClozeTarget(pattern: BunpouPattern): {
       ? sortBySpecificity(primaryCandidates)
       : sortBySpecificity(particleCandidates);
 
-  for (const example of pattern.examples) {
-    if (!example || !example.japanese) continue;
+  // Pass 1: Prefer an example where the grammar target occurs strictly ONCE (cleanest, zero repetition)
+  for (const cand of orderedCandidates) {
+    for (const example of pattern.examples) {
+      if (!example || !example.japanese) continue;
+      const blanked = blankSentencePreservingRuby(example.japanese, cand, false);
+      if (blanked && blanked.matchCount === 1) {
+        return {
+          blankedSentence: blanked.blankedSentence,
+          answer: cand,
+          fullSentence: example.japanese,
+          translation: example.translation,
+        };
+      }
+    }
+  }
 
-    for (const cand of orderedCandidates) {
-      const blanked = blankSentencePreservingRuby(example.japanese, cand);
+  // Pass 2: Fallback for patterns whose examples naturally repeat the target (e.g. とか…とか);
+  // blank ALL occurrences so the answer is never spoiled elsewhere in the sentence.
+  for (const cand of orderedCandidates) {
+    for (const example of pattern.examples) {
+      if (!example || !example.japanese) continue;
+      const blanked = blankSentencePreservingRuby(example.japanese, cand, true);
       if (blanked) {
         return {
           blankedSentence: blanked.blankedSentence,
@@ -339,14 +439,17 @@ function buildFormulaQuestion(
   allPatterns: BunpouPattern[],
   seed: number
 ): QuizQuestion | null {
-  const correctFormula = pattern.formulas[0]?.trim();
+  const rawFormula = pattern.formulas[0]?.trim();
+  if (!rawFormula) return null;
+  const correctFormula = formatCleanFormula(rawFormula);
   if (!correctFormula) return null;
 
   const otherFormulas = Array.from(
     new Set(
       allPatterns
-        .filter(p => p.id !== pattern.id && p.formulas[0] && p.formulas[0].trim() !== correctFormula)
-        .map(p => p.formulas[0].trim())
+        .filter(p => p.id !== pattern.id && p.formulas[0])
+        .map(p => formatCleanFormula(p.formulas[0]))
+        .filter(f => Boolean(f) && f !== correctFormula)
     )
   );
 
@@ -356,16 +459,24 @@ function buildFormulaQuestion(
   const options = seededShuffle([correctFormula, ...distractors], seed + 59);
   const correctIndex = options.indexOf(correctFormula);
 
+  const clue = sanitizeIndonesianClue(pattern.functionText);
+  const exampleTranslation = pattern.examples[0]?.translation?.trim();
+  const basePrompt = `Manakah rumus penyambungan bunpou yang tepat untuk fungsi berikut? "${clue}"`;
+  const promptWithContext = exampleTranslation
+    ? `${basePrompt} (Contoh makna: "${exampleTranslation}")`
+    : basePrompt;
+
   return {
     id: `q-formula-${pattern.id}-${seed}`,
     type: 'formula',
     pattern,
-    prompt: `Manakah rumus penyambungan yang tepat untuk pola "${pattern.title}" (${pattern.functionText})?`,
-    japanesePrompt: pattern.examples[0]?.japanese,
+    prompt: promptWithContext,
+    promptWithoutTranslation: basePrompt,
+    japanesePrompt: undefined,
     japaneseFull: pattern.examples[0]?.japanese,
     options,
     correctIndex,
-    explanation: `Rumus yang benar untuk "${pattern.title}" adalah: ${pattern.formulas.join(' / ')}.`,
+    explanation: `Rumus yang benar untuk pola "${pattern.title}" adalah: ${pattern.formulas.join(' / ')}. ${pattern.functionText}`,
   };
 }
 
@@ -374,14 +485,17 @@ function buildFunctionQuestion(
   allPatterns: BunpouPattern[],
   seed: number
 ): QuizQuestion | null {
-  const correctFunc = pattern.functionText.trim();
+  const rawFunc = pattern.functionText.trim();
+  if (!rawFunc) return null;
+  const correctFunc = sanitizeIndonesianClue(rawFunc);
   if (!correctFunc) return null;
 
   const otherFuncs = Array.from(
     new Set(
       allPatterns
-        .filter(p => p.id !== pattern.id && p.functionText.trim() !== correctFunc)
-        .map(p => p.functionText.trim())
+        .filter(p => p.id !== pattern.id && p.functionText.trim())
+        .map(p => sanitizeIndonesianClue(p.functionText))
+        .filter(f => Boolean(f) && f !== correctFunc)
     )
   );
 
@@ -400,7 +514,7 @@ function buildFunctionQuestion(
     japaneseFull: pattern.examples[0]?.japanese,
     options,
     correctIndex,
-    explanation: `Pola "${pattern.title}" (${pattern.formulas[0]}) berfungsi untuk: ${correctFunc}`,
+    explanation: `Pola "${pattern.title}" (${pattern.formulas[0]}) berfungsi untuk: ${rawFunc}`,
   };
 }
 

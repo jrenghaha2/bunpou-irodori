@@ -187,6 +187,14 @@ export function QuizRunView({
               <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
                 {question.explanation}
               </p>
+              {!question.japanesePrompt && question.japaneseFull ? (
+                <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 p-3 flex items-start justify-between gap-2.5">
+                  <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
+                    <JapaneseText text={question.japaneseFull} showFurigana={showFurigana} />
+                  </p>
+                  <AudioButton text={question.japaneseFull} label="Dengar" />
+                </div>
+              ) : null}
               <div className="pt-1">
                 <FormulaDisplay formulas={question.pattern.formulas} compact />
               </div>

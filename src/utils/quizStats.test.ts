@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IRODORI_DATASET } from '../data/irodoriDataset';
 import type { ChapterNumber } from '../types/bunpou';
+import { formatCleanFormula, sanitizeIndonesianClue } from './quizGenerator';
 import {
   LEGACY_UNRECORDED_CHOICE_LABEL,
   MAX_QUIZ_TOKEN_LENGTH,
@@ -142,13 +143,13 @@ test('encodeQuizSessionToken produces 4-segment right answers and 5-segment wron
   const d2 = decoded.answers![1];
   assert.equal(d2.correct, false);
   assert.equal(d2.chosenLabel, wrongFormulaChoice);
-  assert.equal(d2.expectedLabel, pat2.formulas[0]);
-  assert.ok(d2.promptText?.includes(pat2.title));
+  assert.equal(d2.expectedLabel, formatCleanFormula(pat2.formulas[0]));
+  assert.ok(d2.promptText && !d2.promptText.includes(pat2.title));
 
   const d3 = decoded.answers![2];
   assert.equal(d3.correct, false);
   assert.equal(d3.chosenLabel, wrongFunctionChoice);
-  assert.equal(d3.expectedLabel, pat3.functionText);
+  assert.equal(d3.expectedLabel, sanitizeIndonesianClue(pat3.functionText));
   assert.ok(d3.promptText?.includes(pat3.shortPattern));
 });
 
@@ -162,7 +163,7 @@ test('decodeQuizSessionToken remains backward-compatible with legacy 4-segment t
   assert.equal(decoded.answers?.length, 1);
   assert.equal(decoded.answers![0].correct, false);
   assert.equal(decoded.answers![0].chosenLabel, LEGACY_UNRECORDED_CHOICE_LABEL);
-  assert.equal(decoded.answers![0].expectedLabel, pat.formulas[0]);
+  assert.equal(decoded.answers![0].expectedLabel, formatCleanFormula(pat.formulas[0]));
 });
 
 test('encodeQuizSessionToken guards total length <= 15800 for 120 wrong answers with long distractors', () => {
