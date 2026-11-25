@@ -13,6 +13,7 @@ import {
   LogOut,
   Moon,
   RefreshCw,
+  Shield,
   ShieldCheck,
   Sun,
   Users,
@@ -156,11 +157,11 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-2 lg:py-0 lg:h-16 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-3">
-        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 shrink-0 order-1">
-          <BrandLogo className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 drop-shadow-xs" />
+      <div className="max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 lg:py-0 lg:h-16 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-1.5 gap-y-2 sm:gap-x-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0 order-1">
+          <BrandLogo className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 drop-shadow-xs" />
           <div className="min-w-0 leading-tight">
-            <span className="block font-bold text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap">
+            <span className="block font-bold text-[13px] sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap">
               Irodori Bunpou
             </span>
             <span className="hidden sm:block text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
@@ -169,7 +170,7 @@ export function AppHeader({
           </div>
         </div>
 
-        <div className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 font-mono-num whitespace-nowrap shrink-0 order-2">
+        <div className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 font-mono-num whitespace-nowrap shrink-0 order-2 ml-auto lg:ml-0">
           <strong className="text-emerald-700 dark:text-emerald-400 font-bold" id="mCount">
             {masteredCount}
           </strong>
@@ -177,14 +178,14 @@ export function AppHeader({
           <span className="hidden sm:inline"> hafal</span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 order-3">
+        <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0 order-3 ml-auto lg:ml-0">
           <button
             type="button"
             id="btnToggleFurigana"
             onClick={onToggleFurigana}
             aria-pressed={showFurigana}
             title={showFurigana ? 'Sembunyikan Furigana' : 'Tampilkan Furigana'}
-            className={`min-h-[40px] px-2.5 sm:px-3 py-2 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 ${
+            className={`h-9 min-w-[34px] sm:min-h-[40px] px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 ${
               showFurigana
                 ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/70'
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -205,7 +206,7 @@ export function AppHeader({
             aria-pressed={showTranslation}
             aria-label={showTranslation ? 'Sembunyikan Terjemahan' : 'Tampilkan Terjemahan'}
             title={showTranslation ? 'Sembunyikan Terjemahan' : 'Tampilkan Terjemahan'}
-            className={`min-h-[40px] px-2.5 sm:px-3 py-2 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 ${
+            className={`h-9 min-w-[34px] sm:min-h-[40px] px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500 ${
               showTranslation
                 ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/70'
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -224,7 +225,7 @@ export function AppHeader({
             aria-pressed={isDark}
             aria-label={isDark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'}
             title={isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
-            className="min-h-[40px] min-w-[40px] px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 inline-flex items-center justify-center transition-colors shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+            className="h-9 w-9 sm:min-h-[40px] sm:min-w-[40px] sm:px-2.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 inline-flex items-center justify-center transition-colors shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
           >
             {isDark ? (
               <Sun className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -253,7 +254,7 @@ export function AppHeader({
                 id="btnExportData"
                 onClick={onExport}
                 aria-label="Backup progres (.json)"
-                className="min-h-[40px] px-2.5 sm:px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+                className="h-9 sm:min-h-[40px] px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
                 title="Backup progres (.json)"
               >
                 <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -266,7 +267,7 @@ export function AppHeader({
                 id="btnImportData"
                 onClick={onTriggerImport}
                 aria-label="Restore progres (.json)"
-                className="min-h-[40px] px-2.5 sm:px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+                className="h-9 sm:min-h-[40px] px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
                 title="Restore progres (.json)"
               >
                 <FolderOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -278,7 +279,7 @@ export function AppHeader({
           {!authReady ? (
             <div
               aria-hidden="true"
-              className="h-10 w-[86px] sm:w-[104px] rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse shrink-0"
+              className="h-9 sm:h-10 w-[56px] sm:w-[104px] rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse shrink-0"
             />
           ) : user ? (
             <div ref={menuWrapperRef} className="relative">
@@ -290,7 +291,7 @@ export function AppHeader({
                 aria-expanded={menuOpen}
                 aria-label={`Menu akun ${resolvedName}`}
                 onClick={() => setMenuOpen(o => !o)}
-                className="min-h-[40px] px-2 sm:px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 inline-flex items-center gap-2 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
+                className="h-9 sm:min-h-[40px] px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5 sm:gap-2 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-500"
               >
                 <span className="relative shrink-0">
                   {resolvedAvatar && !avatarBroken ? (
@@ -299,12 +300,12 @@ export function AppHeader({
                       alt={resolvedName}
                       referrerPolicy="no-referrer"
                       onError={() => setAvatarBroken(true)}
-                      className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-700 object-cover bg-slate-100 dark:bg-slate-700"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-slate-200 dark:border-slate-700 object-cover bg-slate-100 dark:bg-slate-700"
                     />
                   ) : (
                     <span
                       aria-hidden="true"
-                      className="w-7 h-7 rounded-full border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-200 font-bold text-xs inline-flex items-center justify-center"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-200 font-bold text-xs inline-flex items-center justify-center"
                     >
                       {initial}
                     </span>
@@ -339,7 +340,7 @@ export function AppHeader({
                   id="accountMenuDropdown"
                   role="menu"
                   aria-labelledby="btnAccountMenu"
-                  className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-40"
+                  className="absolute right-0 mt-2 w-[min(19rem,calc(100vw-1.5rem))] sm:w-80 max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/90 shadow-2xl py-2 z-40"
                 >
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-start gap-3">
                     {resolvedAvatar && !avatarBroken ? (
@@ -359,38 +360,41 @@ export function AppHeader({
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-50 truncate">
-                          {resolvedName}
-                        </p>
-                        {hasAdminAccess ? (
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${
-                              userRole === 'superadmin'
-                                ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                                : 'bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800'
-                            }`}
-                          >
-                            {getRoleLabelId(userRole)}
-                          </span>
-                        ) : null}
-                      </div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-50 truncate">
+                        {resolvedName}
+                      </p>
                       {user.email ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           {user.email}
                         </p>
                       ) : null}
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <p
+                        className={`mt-1.5 text-xs font-semibold inline-flex items-center gap-1.5 ${
+                          userRole === 'superadmin'
+                            ? 'text-indigo-700 dark:text-indigo-300'
+                            : userRole === 'admin'
+                              ? 'text-teal-700 dark:text-teal-300'
+                              : 'text-slate-700 dark:text-slate-200'
+                        }`}
+                      >
+                        {hasAdminAccess ? (
+                          <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        ) : (
+                          <Shield className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-400" aria-hidden="true" />
+                        )}
+                        <span>{getRoleLabelId(userRole)}</span>
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5">
                         <span>{getProviderLabel(user)}</span>
                         <span aria-hidden="true">·</span>
                         {isVerified ? (
                           <span className="text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
-                            <Cloud className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            <Cloud className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                             {syncing ? 'Menyinkronkan...' : 'Cloud aktif'}
                           </span>
                         ) : (
                           <span className="text-amber-700 dark:text-amber-400 font-medium inline-flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                             Belum verifikasi email
                           </span>
                         )}
@@ -557,7 +561,7 @@ export function AppHeader({
               disabled={authBusy}
               aria-label="Masuk ke akun untuk sinkronisasi progres"
               title="Masuk atau daftar akun"
-              className="min-h-[40px] px-3 sm:px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-indigo-500"
+              className="h-9 sm:min-h-[40px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-indigo-500"
             >
               <LogIn className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Masuk</span>
